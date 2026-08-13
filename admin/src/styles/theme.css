@@ -1,0 +1,134 @@
+:root {
+  /* ========================================
+     1. Layout — 布局容器
+     ======================================== */
+
+  /* 侧边栏 */
+  --sidebar-bg: #F5F3EF;
+  --sidebar-collapsed: 56px;
+  --sidebar-expanded: 224px;
+
+  /* 主内容区 */
+  --main-bg: #FFFFFF;
+  --content-bg: #FAFAF8;
+
+  /* ========================================
+     2. Typography — 字体与文字色
+     ======================================== */
+
+  /* 主字体 — Inter（Google Fonts），中文回退各平台系统字体 */
+  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  /* 英文字体 */
+  --font-family-en: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  /* 中文字体 — macOS 苹方 / Windows 微软雅黑 / Linux Noto Sans */
+  --font-family-zh: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  /* 数字字体 — Inter 搭配 JetBrains Mono */
+  --font-family-num: "Inter", "JetBrains Mono", "SF Mono", "Roboto Mono", monospace;
+  /* 等宽/代码字体 — JetBrains Mono */
+  --font-family-mono: "JetBrains Mono", "SF Mono", "Menlo", "Roboto Mono", monospace;
+
+  --text-primary: #2b2b2b;    /* 主要文字（标题/正文） */
+  --text-secondary: #6b6258;  /* 次要文字（描述/菜单项） */
+  --text-muted: #b0a89a;      /* 辅助文字（面包屑/占位/图标） */
+  --text-icon: #c4bdb0;       /* 图标色 / Input placeholder */
+
+  /* ========================================
+     3. Border — 边框
+     ======================================== */
+
+  --border-color: #e8e2d8;    /* 默认边框（输入框/按钮/分页） */
+  --border-hover: #d4cdc0;    /* 悬浮边框（按钮/分页 hover） */
+  --border-light: #efeae2;    /* 浅边框（卡片/表格外框） */
+  --divider: #f5f2ed;         /* 分割线（表格行/搜索栏底部分割） */
+
+  /* ========================================
+     4. Background — 背景色
+     ======================================== */
+
+  --bg-white: #ffffff;         /* 纯白（表格列背景/输入框） */
+  --bg-light: #faf8f5;        /* 浅米（备用浅背景） */
+  --hover-bg: #f0ece6;        /* 悬浮背景（IconButton hover） */
+  --hover-bg-light: #f5f2ed;  /* 浅悬浮背景（次按钮 hover/分页项 hover） */
+  --active-bg: #E4E0D8;       /* 选中/激活背景（菜单选中/hover） */
+
+  /* ========================================
+     5. Brand — 品牌色
+     ======================================== */
+
+  --brand-dark: #2b2b2b;           /* 品牌深色（主按钮背景/激活页码） */
+  --brand-dark-hover: #4d4d4d;     /* 品牌深色-hover（主按钮 hover） */
+
+  /* ========================================
+     6. Status — 状态色
+     ======================================== */
+
+  /* 绿 — 成功/通过/活跃 */
+  --green: #22c55e;
+  --green-light: #dcfce7;
+  --green-text: #166534;
+
+  /* 红 — 失败/拒绝/异常 */
+  --red: #e74c3c;
+  --red-dark: #c0392b;
+  --red-light: #fef2f2;
+  --red-text: #e74c3c;
+
+  /* 黄 — 待处理/警告 */
+  --yellow: #f59e0b;
+  --yellow-light: #fef3c7;
+  --yellow-text: #92400e;
+
+  /* 蓝 — 信息/标识 */
+  --blue: #3b6fdf;
+  --blue-light: #edf2ff;
+  --blue-text: #3b6fdf;
+
+  /* 灰 — 默认/未分配/禁用 */
+  --gray: #6b6258;
+  --gray-light: #f5f2ed;
+  --gray-text: #b0a89a;
+
+  /* 进度条背景 */
+  --progress-bg: #EBEBEB;
+
+  /* 头像渐变 */
+  --avatar-gradient-start: #4ECDC4;
+  --avatar-gradient-end: #44B09E;
+
+  /* 登录页品牌渐变 */
+  --brand-gradient-start: #4ECDC4;
+  --brand-gradient-mid: #2C9E9D;
+  --brand-gradient-end: #1A7A7A;
+
+  /* ========================================
+     7. Table — 表格
+     ======================================== */
+
+  --table-header-bg: #faf8f5;      /* 表头背景 */
+  --table-header-text: #8a8276;    /* 表头文字 */
+  --table-border: #efeae2;         /* 表格外边框 */
+  --table-row-divider: #f5f2ed;    /* 行分割线 */
+  --table-hover-bg: #faf8f5;       /* 行 hover 背景 */
+
+  /* ========================================
+     8. Radius — 圆角
+     ======================================== */
+
+  --radius-sm: 8px;    /* 小圆角（按钮/输入框/标签/分页/菜单项） */
+  --radius-md: 12px;   /* 中圆角（卡片/Modal/DataPanel 内容区） */
+  --radius-lg: 16px;   /* 大圆角（预留 — 非标准大圆角场景） */
+
+  /* ========================================
+     9. Shadow — 阴影
+     ======================================== */
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);   /* 轻微阴影（备用） */
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);  /* 中等阴影（StatCard hover） */
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);  /* 大阴影（预留） */
+
+  /* ========================================
+     10. Transition — 过渡
+     ======================================== */
+
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}

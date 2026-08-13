@@ -1,0 +1,39 @@
+# Prometheus 配置文件
+# 用于采集 DDD-Scaffold 应用的指标
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# 告警规则文件（可选）
+# rule_files:
+#   - "alert_rules.yml"
+
+# 数据采集配置
+scrape_configs:
+  # Prometheus 自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # DDD-Scaffold API 服务
+  - job_name: 'kiqi-api'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8080']
+        labels:
+          service: 'api'
+          environment: 'development'
+          instance: 'localhost:8080'
+
+  # DDD-Scaffold Worker 服务（如果运行）
+  - job_name: 'kiqi-worker'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8081']
+        labels:
+          service: 'worker'
+          environment: 'development'
+          instance: 'localhost:8081'

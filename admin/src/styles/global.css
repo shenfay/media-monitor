@@ -1,0 +1,346 @@
+/* ========================================
+   Reset & Base — 全局重置与基础
+   ======================================== */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--main-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+}
+
+/* ========================================
+   Scrollbar — 滚动条
+   ======================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ========================================
+   Ant Design Overrides — 组件样式覆盖
+   仅保留无法通过 ConfigProvider theme token 设置的规则
+   ======================================== */
+
+/* Menu — 去除选中项下划线指示器 */
+.ant-menu-item-selected::after {
+  display: none !important;
+}
+
+/* Card — 表头最小高度与底部分割线 */
+.ant-card-head {
+  min-height: auto !important;
+  border-bottom-color: var(--border-light) !important;
+}
+
+.ant-card-head-title {
+  font-weight: 600 !important;
+}
+
+/* Button — 过渡动画 */
+.ant-btn {
+  transition: all 0.15s ease !important;
+}
+
+/* Danger primary button hover */
+.ant-btn-primary.ant-btn-dangerous:not(:disabled):hover {
+  background: var(--red-dark) !important;
+  border-color: var(--red-dark) !important;
+}
+
+.ant-btn-default.ant-btn-dangerous:not(:disabled):hover {
+  background: var(--red-light) !important;
+}
+
+/* 大尺寸输入框不受 34px 限制 */
+.ant-input-affix-wrapper .ant-input {
+  height: auto !important;
+}
+
+.ant-input-affix-wrapper-lg,
+.ant-input-lg {
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+/* 输入框 focus 无 box-shadow */
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper-focused,
+.ant-input-affix-wrapper:focus-within,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  box-shadow: none !important;
+}
+
+/* ========================================
+   Table — 表格（补充 theme token 无法覆盖的规则）
+   ======================================== */
+.ant-table {
+  table-layout: fixed !important;
+}
+
+.ant-table-thead > tr > th {
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+}
+
+.ant-table-thead > tr > th:first-child {
+  padding-left: 18px !important;
+}
+
+.ant-table-thead > tr > th:last-child {
+  padding-right: 18px !important;
+}
+
+.ant-table-tbody > tr > td:first-child {
+  padding-left: 18px !important;
+}
+
+.ant-table-tbody > tr > td:last-child {
+  padding-right: 18px !important;
+}
+
+.ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+/* ========================================
+   Tag — 标签
+   ======================================== */
+.ant-tag {
+  border: none !important;
+  line-height: 20px !important;
+  padding: 2px 10px !important;
+}
+
+/* ========================================
+   Progress — 进度条
+   ======================================== */
+.ant-progress-inner {
+  border-radius: 3px !important;
+  background: var(--progress-bg) !important;
+}
+
+.ant-progress-bg {
+  border-radius: 3px !important;
+}
+
+/* ========================================
+   Pagination — 分页（补充 theme token 无法覆盖的规则）
+   ======================================== */
+.ant-pagination {
+  padding: 12px 18px !important;
+  border-top: 1px solid var(--table-border) !important;
+  margin: 0 !important;
+}
+
+.ant-pagination .ant-pagination-item {
+  width: 30px !important;
+  height: 30px !important;
+  border-color: var(--border-color) !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+.ant-pagination .ant-pagination-item a {
+  font-size: 13px !important;
+  color: var(--text-secondary) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  transition: color 0.15s ease !important;
+}
+
+/* 非激活项 hover */
+.ant-pagination .ant-pagination-item:not(.ant-pagination-item-active):hover {
+  background: var(--hover-bg-light) !important;
+  border-color: var(--border-hover) !important;
+}
+
+/* 激活项 */
+.ant-pagination .ant-pagination-item-active {
+  font-weight: 700 !important;
+}
+
+/* 激活项 hover */
+.ant-pagination .ant-pagination-item-active:hover {
+  opacity: 0.85;
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: var(--bg-white) !important;
+}
+
+.ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination .ant-pagination-next .ant-pagination-item-link {
+  border-color: var(--border-color) !important;
+}
+
+.ant-pagination .ant-pagination-options-size-changer .ant-select-selector {
+  padding: 3px 6px !important;
+}
+
+.ant-pagination .ant-pagination-total-text {
+  color: var(--text-muted) !important;
+}
+
+/* ==================== ProTable ==================== */
+
+/* Card container */
+.ant-pro-table .ant-pro-card {
+  border: 1px solid var(--border-light) !important;
+  overflow: hidden;
+}
+
+.ant-pro-table .ant-pro-card-body {
+  padding: 0 !important;
+}
+
+/* Search form area */
+.ant-pro-table .ant-pro-table-search {
+  margin-bottom: 0 !important;
+  padding: 20px 20px 16px !important;
+  border-bottom: 1px solid var(--divider) !important;
+  background: var(--bg-white) !important;
+}
+
+.ant-pro-table .ant-pro-table-search .ant-form {
+  gap: 12px !important;
+}
+
+.ant-pro-table .ant-pro-table-search .ant-form-item {
+  margin-bottom: 0 !important;
+}
+
+/* Toolbar */
+.ant-pro-table .ant-pro-table-list-toolbar {
+  padding: 12px 20px !important;
+}
+
+.ant-pro-table .ant-pro-table-list-toolbar-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-pro-table .ant-pro-table-list-toolbar .ant-space {
+  gap: 8px !important;
+}
+
+/* Options reload button */
+.ant-pro-table .ant-pro-table-list-toolbar .ant-pro-table-list-toolbar-option-button {
+  color: var(--text-muted) !important;
+}
+
+.ant-pro-table .ant-pro-table-list-toolbar .ant-pro-table-list-toolbar-option-button:hover {
+  color: var(--text-secondary) !important;
+  background: var(--hover-bg-light) !important;
+}
+
+/* ========================================
+   IconButton — DataPanel 图标按钮
+   ======================================== */
+.icon-btn {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-light) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+.icon-btn:hover {
+  background: var(--hover-bg) !important;
+  border-color: var(--border-hover) !important;
+}
+
+/* ========================================
+   Action Buttons — 表格操作按钮
+   ======================================== */
+
+/* 去除 icon 与文字间距 */
+.ant-btn-link.ant-btn-sm > .ant-btn-icon {
+  margin-inline-end: 0 !important;
+}
+
+.ant-btn-link.ant-btn-sm {
+  gap: 1px !important;
+}
+
+/* 链接型按钮颜色 — 排除危险操作 */
+.ant-btn-link:not(.ant-btn-dangerous) {
+  color: var(--blue) !important;
+}
+
+/* 通用操作按钮组分隔线 */
+.action-btn-group .ant-space-item {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.action-btn-group .ant-space-item + .ant-space-item::before {
+  content: '';
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+/* 连续操作按钮之间的分隔线 */
+.ant-table-tbody td .ant-space-item {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.ant-table-tbody td .ant-space-item + .ant-space-item::before {
+  content: '';
+  width: 1px;
+  height: 14px;
+  background: var(--border-color);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle-btn:hover {
+  background: var(--active-bg) !important;
+  color: var(--text-primary) !important;
+}

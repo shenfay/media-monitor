@@ -1,0 +1,1550 @@
+basePath: /api/v1
+definitions:
+  github_com_shenfay_kiqi_internal_app_authentication.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      permissions:
+        $ref: '#/definitions/github_com_shenfay_kiqi_internal_domain_rbac.UserPermission'
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_authentication.UserResponse'
+    type: object
+  github_com_shenfay_kiqi_internal_app_authentication.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      last_login_at:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_shenfay_kiqi_internal_app_notification.ReadAllCmd:
+    properties:
+      type:
+        type: string
+    type: object
+  github_com_shenfay_kiqi_internal_domain_rbac.RoleBrief:
+    properties:
+      code:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_shenfay_kiqi_internal_domain_rbac.UserPermission:
+    properties:
+      menus:
+        items:
+          type: string
+        type: array
+      permissions:
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/github_com_shenfay_kiqi_internal_domain_rbac.RoleBrief'
+        type: array
+    type: object
+  github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+      timestamp:
+        description: 响应时间（RFC3339 格式）
+        type: string
+      trace_id:
+        description: 链路追踪 ID（用于日志关联和分布式追踪）
+        type: string
+    type: object
+  github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse:
+    properties:
+      code:
+        type: string
+      data: {}
+      message:
+        type: string
+      timestamp:
+        description: 响应时间（RFC3339 格式）
+        type: string
+      trace_id:
+        description: 链路追踪 ID（用于日志关联和分布式追踪）
+        type: string
+    type: object
+  internal_transport_http_handlers.DeviceResponse:
+    properties:
+      created_at:
+        type: string
+      device_type:
+        type: string
+      ip:
+        type: string
+      is_current:
+        type: boolean
+      token_id:
+        type: string
+      user_agent:
+        type: string
+    type: object
+  internal_transport_http_handlers.DevicesResponse:
+    properties:
+      devices:
+        items:
+          $ref: '#/definitions/internal_transport_http_handlers.DeviceResponse'
+        type: array
+    type: object
+  internal_transport_http_handlers.LoginRequest:
+    properties:
+      email:
+        description: 用户邮箱
+        type: string
+      password:
+        description: 用户密码
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_transport_http_handlers.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        description: 刷新令牌
+        type: string
+    required:
+    - refresh_token
+    type: object
+  internal_transport_http_handlers.RegisterRequest:
+    properties:
+      email:
+        description: 用户邮箱
+        maxLength: 255
+        type: string
+      password:
+        description: 用户密码（8-72字符）
+        maxLength: 72
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_transport_http_handlers.batchUpdateRequest:
+    properties:
+      settings:
+        items:
+          $ref: '#/definitions/internal_transport_http_handlers.settingItem'
+        type: array
+    required:
+    - settings
+    type: object
+  internal_transport_http_handlers.settingItem:
+    properties:
+      key:
+        type: string
+      value:
+        items:
+          type: integer
+        type: array
+    required:
+    - key
+    - value
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: http://www.github.com/shenfay/go-react-admin
+  description: 生产级 DDD 脚手架项目的 API 文档，包含用户认证、事件驱动等核心功能。
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Go DDD Scaffold API
+  version: "1.0"
+paths:
+  /admin/menus:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 菜单树
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取完整菜单树（管理端）
+      tags:
+      - Admin/Menus
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 菜单创建数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            icon:
+              type: string
+            key:
+              type: string
+            label:
+              type: string
+            parent_id:
+              type: string
+            path:
+              type: string
+            permission:
+              type: string
+            sort_order:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "409":
+          description: 菜单Key已存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建新菜单
+      tags:
+      - Admin/Menus
+  /admin/menus/{id}:
+    delete:
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 菜单不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除菜单
+      tags:
+      - Admin/Menus
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 菜单更新数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            icon:
+              type: string
+            label:
+              type: string
+            path:
+              type: string
+            permission:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 菜单不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新菜单信息
+      tags:
+      - Admin/Menus
+  /admin/menus/{id}/status:
+    patch:
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 状态已切换
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 菜单不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 切换菜单启用/禁用状态
+      tags:
+      - Admin/Menus
+  /admin/menus/sort:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 排序数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            items:
+              items:
+                properties:
+                  id:
+                    type: string
+                  sort_order:
+                    type: integer
+                type: object
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 排序已更新
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 批量更新菜单排序顺序
+      tags:
+      - Admin/Menus
+  /admin/messages:
+    get:
+      parameters:
+      - description: 消息类型
+        in: query
+        name: type
+        type: string
+      - description: 消息分类
+        in: query
+        name: category
+        type: string
+      - default: 20
+        description: 每页条数
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 消息列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理员查询所有消息
+      tags:
+      - Messages
+  /admin/roles:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 角色列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取所有角色列表
+      tags:
+      - Admin/Roles
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色创建数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            code:
+              type: string
+            description:
+              type: string
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "409":
+          description: 角色编码已存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 创建新角色
+      tags:
+      - Admin/Roles
+  /admin/roles/{id}:
+    delete:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除角色
+      tags:
+      - Admin/Roles
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 角色更新数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            description:
+              type: string
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新角色信息
+      tags:
+      - Admin/Roles
+  /admin/roles/{id}/permissions:
+    get:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 权限列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取指定角色的权限列表
+      tags:
+      - Admin/Permissions
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 权限标识列表
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            permissions:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 权限已更新
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新角色的权限分配
+      tags:
+      - Admin/Permissions
+  /admin/roles/{id}/status:
+    patch:
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 状态已切换
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 切换角色启用/禁用状态
+      tags:
+      - Admin/Roles
+  /admin/users:
+    get:
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 角色ID
+        in: query
+        name: role_id
+        type: string
+      - description: 状态筛选
+        enum:
+        - active
+        - locked
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取用户列表（分页）
+      tags:
+      - Admin/Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户创建数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            password:
+              type: string
+            role_ids:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "409":
+          description: 邮箱已存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理员创建用户
+      tags:
+      - Admin/Users
+  /admin/users/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 用户更新数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            role_ids:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 管理员更新用户信息
+      tags:
+      - Admin/Users
+  /admin/users/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 状态数据
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            locked:
+              type: boolean
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 状态已更新
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 切换用户启用/禁用状态
+      tags:
+      - Admin/Users
+  /auth/devices:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handlers.DevicesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      tags:
+      - Authentication
+  /auth/devices/{token}:
+    delete:
+      parameters:
+      - description: Device token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke a specific device
+      tags:
+      - Authentication
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_authentication.AuthResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: 账号或密码错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "423":
+          description: 账户已锁定
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      summary: 用户登录并返回令牌
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - Authentication
+  /auth/logout-all:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout from all devices
+      tags:
+      - Authentication
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_authentication.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user information
+      tags:
+      - Authentication
+  /auth/menus:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 菜单树
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取当前登录用户可见的菜单树
+      tags:
+      - Admin/Menus
+  /auth/permissions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 权限列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取当前登录用户的权限列表
+      tags:
+      - Admin/Permissions
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handlers.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_authentication.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Invalid or expired token
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户注册数据
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 注册成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_authentication.AuthResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "409":
+          description: 邮箱已存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      summary: Register a new user account
+      tags:
+      - Authentication
+  /messages:
+    get:
+      parameters:
+      - description: 消息类型
+        enum:
+        - system
+        - companion
+        in: query
+        name: type
+        type: string
+      - description: 消息分类
+        in: query
+        name: category
+        type: string
+      - description: 已读状态
+        in: query
+        name: is_read
+        type: boolean
+      - default: 20
+        description: 每页条数
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 消息列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户消息列表
+      tags:
+      - Messages
+  /messages/{id}/read:
+    post:
+      parameters:
+      - description: 消息ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 标记成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "403":
+          description: 无权操作
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 消息不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 标记消息已读
+      tags:
+      - Messages
+  /messages/read-all:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 可选类型筛选
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_notification.ReadAllCmd'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 标记成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 标记全部已读
+      tags:
+      - Messages
+  /messages/unread-count:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 未读计数
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取未读消息计数
+      tags:
+      - Messages
+  /operation-logs:
+    get:
+      parameters:
+      - default: 20
+        description: 每页条数
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      - description: 按分类筛选
+        in: query
+        name: category
+        type: string
+      - description: 按操作筛选
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作日志列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询操作日志列表
+      tags:
+      - OperationLogs
+  /operation-logs/category/{category}:
+    get:
+      parameters:
+      - description: 操作分类
+        in: path
+        name: category
+        required: true
+        type: string
+      - default: 20
+        description: 每页条数
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 分类操作日志
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 按分类查询操作日志
+      tags:
+      - OperationLogs
+  /operation-logs/user/{user_id}:
+    get:
+      parameters:
+      - description: 用户ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 20
+        description: 每页条数
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 偏移量
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户操作日志
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 查询指定用户的操作日志
+      tags:
+      - OperationLogs
+  /settings:
+    get:
+      parameters:
+      - description: 设置分类
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 设置列表
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取系统设置列表
+      tags:
+      - Settings
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 批量更新数据
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handlers.batchUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 批量更新系统设置
+      tags:
+      - Settings
+  /settings/{key}:
+    get:
+      parameters:
+      - description: 设置项Key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 设置详情
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: 设置项不存在
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取单个系统设置
+      tags:
+      - Settings
+  /users/{id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_app_authentication.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/github_com_shenfay_kiqi_internal_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    description: 使用 JWT Token，格式：Bearer {token}
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

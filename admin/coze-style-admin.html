@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中台管理系统</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --sidebar-bg: #F5F3EF;
+      --sidebar-collapsed: 56px;
+      --sidebar-expanded: 224px;
+      --main-bg: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B6B6B;
+      --text-muted: #999999;
+      --border-color: #E8E6E1;
+      --accent: #3D5A80;
+      --accent-light: #5B7DA8;
+      --accent-bg: #EEF2F7;
+      --green: #2DA44E;
+      --red: #CF222E;
+      --yellow: #BF8700;
+      --blue: #0969DA;
+      --orange: #BC4C00;
+      --hover-bg: #EDEAE4;
+      --active-bg: #E4E0D8;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--main-bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .layout { display: flex; height: 100vh; }
+
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: var(--sidebar-expanded);
+      min-width: var(--sidebar-expanded);
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border-color);
+      user-select: none;
+      transition: width var(--transition), min-width var(--transition);
+      position: relative;
+    }
+
+    .sidebar.collapsed {
+      width: var(--sidebar-collapsed);
+      min-width: var(--sidebar-collapsed);
+    }
+
+    /* Sidebar Header */
+    .sidebar-header {
+      padding: 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      height: 56px;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-brand .logo {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .sidebar-brand .name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      transition: opacity var(--transition), width var(--transition);
+    }
+
+    .collapsed .sidebar-brand .name {
+      opacity: 0;
+      width: 0 !important;
+    }
+
+    /* Toggle button - always visible */
+    .sidebar-toggle {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .sidebar-toggle:hover { background: var(--hover-bg); color: var(--text-primary); }
+
+    .sidebar-toggle svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; stroke-width: 2; fill: none;
+      transition: transform var(--transition);
+    }
+
+    .collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+
+    /* Sidebar Nav */
+    .sidebar-nav {
+      flex: 1;
+      padding: 0 6px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .sidebar-nav::-webkit-scrollbar { width: 3px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      padding: 16px 10px 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity var(--transition), height var(--transition), padding var(--transition);
+    }
+
+    .collapsed .nav-section-title { opacity: 0; height: 0; padding-top: 0; padding-bottom: 0; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s;
+      color: var(--text-secondary);
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .nav-item:hover { background: var(--hover-bg); color: var(--text-primary); }
+    .nav-item.active { background: var(--active-bg); color: var(--text-primary); font-weight: 500; }
+
+    .nav-item .icon {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-item .icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      fill: none;
+    }
+
+    .nav-item .label {
+      overflow: hidden;
+      transition: opacity var(--transition), width var(--transition);
+    }
+
+    .collapsed .nav-item .label { opacity: 0; width: 0 !important; }
+    .collapsed .nav-item { justify-content: center; padding: 10px 0; }
+
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 10px;
+      line-height: 1.4;
+      transition: opacity var(--transition);
+    }
+
+    .collapsed .nav-item .badge { display: none; }
+
+    .nav-divider {
+      height: 1px;
+      background: var(--border-color);
+      margin: 8px 10px;
+    }
+
+    .collapsed .nav-divider { margin: 8px 4px; }
+
+    /* Sidebar Footer */
+    .sidebar-footer {
+      padding: 12px 12px 16px;
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s;
+      overflow: hidden;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-user:hover { background: var(--hover-bg); }
+
+    .sidebar-user .avatar {
+      width: 28px; height: 28px; min-width: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4ECDC4, #44B09E);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 11px; font-weight: 600;
+    }
+
+    .sidebar-user .name {
+      font-size: 13px; font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity var(--transition), width var(--transition);
+    }
+
+    .collapsed .sidebar-user .name { opacity: 0; width: 0 !important; }
+    .collapsed .sidebar-user { justify-content: center; }
+    .collapsed .sidebar-footer { padding: 12px 8px 16px; }
+
+    .sidebar-bell {
+      width: 28px; height: 28px; min-width: 28px;
+      border: none; background: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .sidebar-bell:hover { background: var(--hover-bg); color: var(--text-primary); }
+
+    .sidebar-bell svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; stroke-width: 1.6; fill: none;
+    }
+
+    .sidebar-bell .badge {
+      position: absolute;
+      top: -6px; right: -6px;
+      min-width: 16px; height: 16px;
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px;
+      line-height: 1;
+      border: 2px solid var(--sidebar-bg);
+    }
+
+    .collapsed .sidebar-bell .badge-text { display: none; }
+    .collapsed .sidebar-bell .badge { min-width: 8px; height: 8px; padding: 0; top: 2px; right: 2px; }
+
+    /* ===== Main Content ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--main-bg);
+      min-width: 0;
+    }
+
+    /* Top Bar */
+    .topbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .topbar-breadcrumb .crumb { color: var(--text-muted); }
+    .topbar-breadcrumb .crumb.current { color: var(--text-primary); font-weight: 500; }
+    .topbar-breadcrumb .sep { color: var(--text-muted); font-size: 12px; }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .topbar-search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #F5F5F5;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-right: 8px;
+    }
+
+    .topbar-search:hover { background: #EBEBEB; }
+
+    .topbar-search svg {
+      width: 16px; height: 16px;
+      stroke: var(--text-muted); stroke-width: 1.6; fill: none;
+    }
+
+    .topbar-search span { font-size: 13px; color: var(--text-muted); }
+
+    .topbar-search kbd {
+      font-size: 11px; color: var(--text-muted);
+      background: #E5E5E5; padding: 1px 5px; border-radius: 4px;
+      font-family: var(--font-family); margin-left: 8px;
+    }
+
+    .topbar-icon-btn {
+      width: 36px; height: 36px;
+      border: none; background: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+
+    .topbar-icon-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
+
+    .topbar-icon-btn svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; stroke-width: 1.6; fill: none;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .content[hidden] { display: none !important; }
+
+    /* ===== Stats ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--main-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: box-shadow 0.2s;
+    }
+
+    .stat-card:hover { box-shadow: var(--shadow-md); }
+
+    .stat-card .label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .stat-card .label .icon-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .stat-card .change {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .stat-card .change.up { color: var(--green); }
+    .stat-card .change.down { color: var(--red); }
+
+    /* Panel */
+    .panel {
+      background: var(--main-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+    }
+
+    .panel-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+    .panel-action {
+      font-size: 13px; color: var(--accent);
+      cursor: pointer; border: none; background: none; font-weight: 500;
+    }
+
+    .panel-action:hover { text-decoration: underline; }
+
+    .panel-body { padding: 16px 20px; }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th {
+      text-align: left; font-size: 12px; font-weight: 500;
+      color: var(--text-muted); padding: 10px 12px 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .data-table td {
+      padding: 13px 12px 13px 0;
+      font-size: 14px; color: var(--text-primary);
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .tag-green  { background: #DAFBE1; color: #11632C; }
+    .tag-yellow { background: #FFF8C5; color: #7A5E00; }
+    .tag-red    { background: #FFEBE9; color: #8C3B2D; }
+    .tag-blue   { background: #DDEEFF; color: #0969DA; }
+    .tag-gray   { background: #EBEBEB; color: #57606A; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.15s;
+      font-family: var(--font-family); line-height: 1.5; white-space: nowrap;
+    }
+
+    .btn-sm { padding: 4px 10px; font-size: 12px; gap: 4px; }
+
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: var(--accent-light); border-color: var(--accent-light); }
+    .btn-outline { background: var(--main-bg); color: var(--text-primary); border-color: var(--border-color); }
+    .btn-outline:hover { background: var(--hover-bg); }
+    .btn-danger { background: #FFEBE9; color: var(--red); border-color: var(--border-color); }
+    .btn-danger:hover { background: #FFE5E3; border-color: var(--red); }
+    .btn-link { background: none; border: none; color: var(--accent); padding: 4px 8px; }
+    .btn-link:hover { text-decoration: underline; }
+
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.6; fill: none; }
+
+    .actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .panels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 1100px) { .panels-grid { grid-template-columns: 1fr; } }
+
+    /* Mini list */
+    .mini-list { list-style: none; }
+    .mini-list li {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border-color); font-size: 14px;
+    }
+    .mini-list li:last-child { border-bottom: none; }
+
+    /* Progress bar */
+    .progress-bar { height: 6px; background: #EBEBEB; border-radius: 3px; overflow: hidden; flex: 1; margin: 0 12px; }
+    .progress-bar .fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+    /* Form */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+    .form-label.required::after { content: '*'; color: var(--red); margin-left: 4px; }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 8px 12px;
+      border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+      font-size: 14px; font-family: var(--font-family);
+      background: #fff; color: var(--text-primary);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(61, 90, 128, 0.1);
+    }
+
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+    .form-textarea { min-height: 80px; resize: vertical; }
+    .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .form-error { font-size: 12px; color: var(--red); margin-top: 4px; }
+    .form-row { display: flex; gap: 16px; }
+    .form-col { flex: 1; }
+
+    .checkbox-group, .radio-group { display: flex; flex-wrap: wrap; gap: 12px; }
+    .checkbox-item, .radio-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+    .checkbox-item input, .radio-item input { accent-color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { width: var(--sidebar-collapsed) !important; min-width: var(--sidebar-collapsed) !important; }
+      .sidebar .label, .sidebar .name, .sidebar .nav-section-title,
+      .sidebar .badge, .sidebar-brand .name { display: none !important; }
+      .sidebar .nav-item { justify-content: center; }
+      .sidebar-user { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Header -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="logo">Z</div>
+          <div class="name">中台管理</div>
+        </div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="折叠/展开">
+          <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- Nav -->
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">概览</div>
+        <div class="nav-item active" onclick="switchView('dashboard', this)">
+          <span class="icon"><svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1" ry="1"/><rect x="9" y="1" width="6" height="6" rx="1" ry="1"/><rect x="1" y="9" width="6" height="6" rx="1" ry="1"/><rect x="9" y="9" width="6" height="6" rx="1" ry="1"/></svg></span>
+          <span class="label">工作台</span>
+        </div>
+
+        <div class="nav-section-title">数据中台</div>
+        <div class="nav-item" onclick="switchView('data-overview', this)">
+          <span class="icon"><svg viewBox="0 0 16 16"><rect x="1" y="9" width="4" height="6" rx="0.5"/><rect x="6" y="5" width="4" height="10" rx="0.5"/><rect x="11" y="1" width="4" height="14" rx="0.5"/></svg></span>
+          <span class="label">数据概览</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><polyline points="1,12 4,8 7,10 10,4 15,7" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="1" y1="15" x2="15" y2="15" stroke="currentColor" stroke-width="1"/></svg></span>
+          <span class="label">数据报表</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 100 14A7 7 0 008 1z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 8.5l2 2 3-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="label">数据质量</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><path d="M2 3h12v10H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M2 6h12" stroke="currentColor" stroke-width="1"/><circle cx="4.5" cy="4.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="4.5" r="0.5" fill="currentColor"/></svg></span>
+          <span class="label">数据资产</span>
+        </div>
+
+        <div class="nav-section-title">用户中心</div>
+        <div class="nav-item" onclick="switchView('users', this)">
+          <span class="icon"><svg viewBox="0 0 16 16"><circle cx="5.5" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11.5" cy="5" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M1 14c0-2.5 2-4.5 4.5-4.5S10 11.5 10 14" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 14c0-2 1.5-3.5 3.5-3.5S15 13 15 14" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          <span class="label">用户管理</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><path d="M8 1L3 3.5v4c0 3.5 2.2 6.8 5 7.5 2.8-.7 5-4 5-7.5v-4L8 1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 7.5l2 2 3-3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="label">权限管理</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="5" y1="3" x2="5" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="5" y2="7" stroke="currentColor" stroke-width="1"/></svg></span>
+          <span class="label">组织架构</span>
+        </div>
+
+        <div class="nav-section-title">业务中台</div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><rect x="2" y="1" width="9" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="4" y1="4" x2="9" y2="4" stroke="currentColor" stroke-width="1"/><line x1="4" y1="6.5" x2="9" y2="6.5" stroke="currentColor" stroke-width="1"/><line x1="4" y1="9" x2="7" y2="9" stroke="currentColor" stroke-width="1"/><path d="M5 13v2h8a1 1 0 001-1V5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+          <span class="label">内容管理</span>
+          <span class="badge">3</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><path d="M3 3h4v4H3zM9 9h4v4H9z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 5h2M7 11h2M5 7v2M11 5v2" stroke="currentColor" stroke-width="1.2"/></svg></span>
+          <span class="label">工作流</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><path d="M6 3H3v3M10 3h3v3M6 13H3v-3M10 13h3v-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="label">API 管理</span>
+        </div>
+
+        <div class="nav-section-title">系统</div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="5" y1="4" x2="11" y2="4" stroke="currentColor" stroke-width="1"/><line x1="5" y1="6.5" x2="11" y2="6.5" stroke="currentColor" stroke-width="1"/><line x1="5" y1="9" x2="8" y2="9" stroke="currentColor" stroke-width="1"/></svg></span>
+          <span class="label">审计日志</span>
+        </div>
+        <div class="nav-item">
+          <span class="icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="1.5" x2="8" y2="3" stroke="currentColor" stroke-width="1"/><line x1="8" y1="13" x2="8" y2="14.5" stroke="currentColor" stroke-width="1"/><line x1="1.5" y1="8" x2="3" y2="8" stroke="currentColor" stroke-width="1"/><line x1="13" y1="8" x2="14.5" y2="8" stroke="currentColor" stroke-width="1"/></svg></span>
+          <span class="label">系统设置</span>
+        </div>
+      </nav>
+
+      <!-- Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-row">
+          <div class="sidebar-user">
+            <div class="avatar">管</div>
+            <div class="name">管理员</div>
+          </div>
+          <button class="sidebar-bell" title="消息通知">
+            <svg viewBox="0 0 16 16"><path d="M8 1.5c-2.5 0-4.5 2-4.5 4.5v2.5l-1.5 2h12l-1.5-2V6c0-2.5-2-4.5-4.5-4.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 12.5c.3 1 1 1.5 2 1.5s1.7-.5 2-1.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span class="badge">29</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-breadcrumb">
+            <span class="crumb">首页</span>
+            <span class="sep">/</span>
+            <span class="crumb current" id="topbar-current">工作台</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-search">
+            <svg viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <span>搜索</span>
+            <kbd>⌘K</kbd>
+          </div>
+          <button class="topbar-icon-btn" title="帮助">
+            <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2-.9 1.5-2 2v1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.7" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="content" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label"><span class="icon-dot" style="background:var(--accent)"></span>总用户数</div>
+            <div class="value">12,847</div>
+            <div class="change up">↑ 12.5% 较上月</div>
+          </div>
+          <div class="stat-card">
+            <div class="label"><span class="icon-dot" style="background:var(--green)"></span>日活用户</div>
+            <div class="value">3,291</div>
+            <div class="change up">↑ 8.2% 较昨日</div>
+          </div>
+          <div class="stat-card">
+            <div class="label"><span class="icon-dot" style="background:var(--blue)"></span>API 调用</div>
+            <div class="value">48.5k</div>
+            <div class="change up">↑ 23.1% 较上月</div>
+          </div>
+          <div class="stat-card">
+            <div class="label"><span class="icon-dot" style="background:var(--yellow)"></span>平均响应</div>
+            <div class="value">1.2s</div>
+            <div class="change up">↓ 0.3s 较上月</div>
+          </div>
+        </div>
+
+        <div class="panels-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">最近活动</span>
+              <button class="panel-action">查看全部</button>
+            </div>
+            <div class="panel-body">
+              <table class="data-table">
+                <thead><tr><th>用户</th><th>操作</th><th>状态</th><th>时间</th></tr></thead>
+                <tbody>
+                  <tr><td>张小明</td><td>创建对话「项目方案讨论」</td><td><span class="tag tag-green">完成</span></td><td>2 分钟前</td></tr>
+                  <tr><td>李雪</td><td>上传文件「Q2报告.pdf」</td><td><span class="tag tag-blue">处理中</span></td><td>15 分钟前</td></tr>
+                  <tr><td>王磊</td><td>调用插件「数据分析」</td><td><span class="tag tag-green">完成</span></td><td>1 小时前</td></tr>
+                  <tr><td>陈芳</td><td>修改系统配置</td><td><span class="tag tag-yellow">待审核</span></td><td>2 小时前</td></tr>
+                  <tr><td>赵鹏</td><td>批量导入用户数据</td><td><span class="tag tag-red">失败</span></td><td>3 小时前</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">服务状态</span>
+              <button class="panel-action">详情</button>
+            </div>
+            <div class="panel-body">
+              <ul class="mini-list">
+                <li><span>API 网关</span><div style="display:flex;align-items:center;flex:1;margin:0 16px;"><div class="progress-bar"><div class="fill" style="width:95%;background:var(--green)"></div></div></div><span class="tag tag-green">正常</span></li>
+                <li><span>数据引擎</span><div style="display:flex;align-items:center;flex:1;margin:0 16px;"><div class="progress-bar"><div class="fill" style="width:87%;background:var(--green)"></div></div></div><span class="tag tag-green">正常</span></li>
+                <li><span>消息队列</span><div style="display:flex;align-items:center;flex:1;margin:0 16px;"><div class="progress-bar"><div class="fill" style="width:62%;background:var(--yellow)"></div></div></div><span class="tag tag-yellow">警告</span></li>
+                <li><span>存储服务</span><div style="display:flex;align-items:center;flex:1;margin:0 16px;"><div class="progress-bar"><div class="fill" style="width:91%;background:var(--green)"></div></div></div><span class="tag tag-green">正常</span></li>
+                <li><span>定时任务</span><div style="display:flex;align-items:center;flex:1;margin:0 16px;"><div class="progress-bar"><div class="fill" style="width:23%;background:var(--red)"></div></div></div><span class="tag tag-red">异常</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">快捷操作</span></div>
+          <div class="panel-body">
+            <div class="actions-row">
+              <button class="btn btn-primary">新建对话</button>
+              <button class="btn btn-outline">添加用户</button>
+              <button class="btn btn-outline">导出报表</button>
+              <button class="btn btn-outline">API 文档</button>
+              <button class="btn btn-danger">清空缓存</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Overview -->
+      <div class="content" id="view-data-overview" hidden>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="label"><span class="icon-dot" style="background:var(--accent)"></span>数据表总量</div><div class="value">1,284</div><div class="change up">↑ 56 本月新增</div></div>
+          <div class="stat-card"><div class="label"><span class="icon-dot" style="background:var(--green)"></span>数据质量评分</div><div class="value">94.2</div><div class="change up">↑ 1.8 较上周</div></div>
+          <div class="stat-card"><div class="label"><span class="icon-dot" style="background:var(--blue)"></span>ETL 任务</div><div class="value">327</div><div class="change up">↑ 12 今日运行</div></div>
+          <div class="stat-card"><div class="label"><span class="icon-dot" style="background:var(--red)"></span>异常数据</div><div class="value">18</div><div class="change down">↑ 3 较昨日</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">数据源接入</span><button class="panel-action">接入新数据源</button></div>
+          <div class="panel-body">
+            <table class="data-table">
+              <thead><tr><th>数据源</th><th>类型</th><th>同步状态</th><th>最近同步</th><th>数据量</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td>业务主库</td><td><span class="tag tag-blue">MySQL</span></td><td><span class="tag tag-green">正常</span></td><td>3 分钟前</td><td>2.4M 行</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-link">同步</button></td></tr>
+                <tr><td>日志中心</td><td><span class="tag tag-gray">Elasticsearch</span></td><td><span class="tag tag-green">正常</span></td><td>1 分钟前</td><td>8.7M 条</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-link">同步</button></td></tr>
+                <tr><td>对象存储</td><td><span class="tag tag-gray">S3</span></td><td><span class="tag tag-yellow">延迟</span></td><td>42 分钟前</td><td>156 GB</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-link">同步</button></td></tr>
+                <tr><td>消息队列</td><td><span class="tag tag-gray">Kafka</span></td><td><span class="tag tag-green">正常</span></td><td>实时</td><td>12.3k/s</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-link">同步</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users -->
+      <div class="content" id="view-users" hidden>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">用户列表</span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline">导出</button>
+              <button class="btn btn-primary">添加用户</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table class="data-table">
+              <thead><tr><th>姓名</th><th>邮箱</th><th>角色</th><th>部门</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td>张小明</td><td>zhang@example.com</td><td><span class="tag tag-blue">管理员</span></td><td>技术部</td><td><span class="tag tag-green">活跃</span></td><td>2026-01-15</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-danger">禁用</button></td></tr>
+                <tr><td>李雪</td><td>lixue@example.com</td><td><span class="tag tag-gray">编辑</span></td><td>运营部</td><td><span class="tag tag-green">活跃</span></td><td>2026-02-20</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-danger">禁用</button></td></tr>
+                <tr><td>王磊</td><td>wanglei@example.com</td><td><span class="tag tag-gray">编辑</span></td><td>产品部</td><td><span class="tag tag-yellow">待激活</span></td><td>2026-03-10</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-danger">禁用</button></td></tr>
+                <tr><td>陈芳</td><td>chenfang@example.com</td><td><span class="tag tag-gray">成员</span></td><td>市场部</td><td><span class="tag tag-green">活跃</span></td><td>2026-04-05</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-danger">禁用</button></td></tr>
+                <tr><td>赵鹏</td><td>zhaopeng@example.com</td><td><span class="tag tag-gray">成员</span></td><td>技术部</td><td><span class="tag tag-red">已禁用</span></td><td>2026-04-18</td><td><button class="btn btn-sm btn-outline">编辑</button> <button class="btn btn-sm btn-link">启用</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">添加用户</span></div>
+          <div class="panel-body">
+            <form>
+              <div class="form-row">
+                <div class="form-col">
+                  <div class="form-group">
+                    <label class="form-label required">姓名</label>
+                    <input type="text" class="form-input" placeholder="请输入姓名">
+                  </div>
+                </div>
+                <div class="form-col">
+                  <div class="form-group">
+                    <label class="form-label required">邮箱</label>
+                    <input type="email" class="form-input" placeholder="example@domain.com">
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-col">
+                  <div class="form-group">
+                    <label class="form-label">部门</label>
+                    <select class="form-select">
+                      <option value="">请选择部门</option>
+                      <option value="tech">技术部</option>
+                      <option value="product">产品部</option>
+                      <option value="operation">运营部</option>
+                      <option value="market">市场部</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-col">
+                  <div class="form-group">
+                    <label class="form-label required">角色</label>
+                    <select class="form-select">
+                      <option value="">请选择角色</option>
+                      <option value="admin">管理员</option>
+                      <option value="editor">编辑</option>
+                      <option value="member">成员</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">备注</label>
+                <textarea class="form-textarea" placeholder="请输入备注信息（可选）"></textarea>
+                <div class="form-hint">最多 500 字</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">权限</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-item"><input type="checkbox" checked> 数据查看</label>
+                  <label class="checkbox-item"><input type="checkbox" checked> 内容编辑</label>
+                  <label class="checkbox-item"><input type="checkbox"> 用户管理</label>
+                  <label class="checkbox-item"><input type="checkbox"> 系统设置</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">状态</label>
+                <div class="radio-group">
+                  <label class="radio-item"><input type="radio" name="status" value="active" checked> 活跃</label>
+                  <label class="radio-item"><input type="radio" name="status" value="inactive"> 停用</label>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button type="button" class="btn btn-primary">保存</button>
+                <button type="button" class="btn btn-outline">取消</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+
+    function toggleSidebar() {
+      sidebar.classList.toggle('collapsed');
+    }
+
+    function switchView(view, el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      if (el) el.classList.add('active');
+      const names = { dashboard: '工作台', 'data-overview': '数据概览', users: '用户管理' };
+      document.getElementById('topbar-current').textContent = names[view] || view;
+      document.querySelectorAll('.main .content').forEach(c => c.hidden = true);
+      const target = document.getElementById('view-' + view);
+      if (target) target.hidden = false;
+    }
+  </script>
+</body>
+</html>
