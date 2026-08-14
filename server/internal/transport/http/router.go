@@ -246,7 +246,7 @@ func (r *Router) setupCrawlRoutes(v1 *gin.RouterGroup) {
 	permMiddleware := middleware.PermissionMiddleware(r.enforcer)
 
 	// 管理路由（管理员）
-	admin := v1.Group("/crawl")
+	admin := v1.Group("/admin/crawl")
 	admin.Use(authMiddleware, permMiddleware)
 	{
 		r.crawlHandler.RegisterAdminRoutes(admin)

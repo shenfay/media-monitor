@@ -3,6 +3,13 @@ import { message } from 'antd'
 import i18n from '@/locales'
 import type { ApiResponse } from '@/types'
 
+// 扩展 axios config 以支持静默模式（跳过全局错误提示）
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    silent?: boolean
+  }
+}
+
 // 创建 axios 实例
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -59,6 +66,10 @@ request.interceptors.response.use(
     return data
   },
   (error: AxiosError<{ code?: string; message?: string }>) => {
+    // 静默模式：跳过全局错误提示，由调用方自行处理
+    if (error.config?.silent) {
+      return Promise.reject(error)
+    }
     const { response } = error
     if (response) {
       const { status, data } = response

@@ -3,10 +3,12 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
 	apperrors "github.com/shenfay/go-react-admin/pkg/errors"
 	"github.com/shenfay/go-react-admin/internal/app/crawl"
 	"github.com/shenfay/go-react-admin/internal/transport/http/response"
@@ -32,9 +34,12 @@ func (h *CrawlHandler) RegisterAdminRoutes(rg *gin.RouterGroup) {
 	rg.POST("/tasks", h.CreateTask)
 	rg.GET("/tasks", h.ListTasks)
 	rg.GET("/tasks/:id", h.GetTask)
+	rg.GET("/articles", h.ListArticles)
+	rg.GET("/articles/:id", h.GetArticle)
+	rg.GET("/dashboard/stats", h.DashboardStats)
 }
 
-// ListSources GET /api/v1/crawl/sources
+// ListSources GET /api/v1/admin/crawl/sources
 // @Summary 列出数据源
 // @Tags Crawl
 // @Security BearerAuth
@@ -52,7 +57,7 @@ func (h *CrawlHandler) ListSources(c *gin.Context) {
 	response.Success(c, sources)
 }
 
-// CreateSource POST /api/v1/crawl/sources
+// CreateSource POST /api/v1/admin/crawl/sources
 // @Summary 创建数据源
 // @Tags Crawl
 // @Security BearerAuth
@@ -73,7 +78,7 @@ func (h *CrawlHandler) CreateSource(c *gin.Context) {
 	response.Created(c, src)
 }
 
-// UpdateSource PUT /api/v1/crawl/sources/:id
+// UpdateSource PUT /api/v1/admin/crawl/sources/:id
 // @Summary 更新数据源
 // @Tags Crawl
 // @Security BearerAuth
@@ -97,7 +102,7 @@ func (h *CrawlHandler) UpdateSource(c *gin.Context) {
 	response.Success(c, src)
 }
 
-// DeleteSource DELETE /api/v1/crawl/sources/:id
+// DeleteSource DELETE /api/v1/admin/crawl/sources/:id
 // @Summary 删除数据源
 // @Tags Crawl
 // @Security BearerAuth
@@ -110,7 +115,7 @@ func (h *CrawlHandler) DeleteSource(c *gin.Context) {
 	response.NoContent(c)
 }
 
-// RunSource POST /api/v1/crawl/sources/:id/run
+// RunSource POST /api/v1/admin/crawl/sources/:id/run
 // @Summary 手动触发一次抓取
 // @Tags Crawl
 // @Security BearerAuth
@@ -136,7 +141,7 @@ func (h *CrawlHandler) RunSource(c *gin.Context) {
 	response.Success(c, gin.H{"task_id": taskID})
 }
 
-// CreateTask POST /api/v1/crawl/tasks
+// CreateTask POST /api/v1/admin/crawl/tasks
 // @Summary 创建抓取任务
 // @Tags Crawl
 // @Security BearerAuth
@@ -162,7 +167,7 @@ func (h *CrawlHandler) CreateTask(c *gin.Context) {
 	response.Created(c, gin.H{"task_id": taskID})
 }
 
-// GetTask GET /api/v1/crawl/tasks/:id
+// GetTask GET /api/v1/admin/crawl/tasks/:id
 // @Summary 获取任务详情
 // @Tags Crawl
 // @Security BearerAuth
@@ -180,7 +185,7 @@ func (h *CrawlHandler) GetTask(c *gin.Context) {
 	response.Success(c, t)
 }
 
-// ListTasks GET /api/v1/crawl/tasks
+// ListTasks GET /api/v1/admin/crawl/tasks
 // @Summary 列出任务（可按 source_id 过滤）
 // @Tags Crawl
 // @Security BearerAuth
@@ -192,4 +197,61 @@ func (h *CrawlHandler) ListTasks(c *gin.Context) {
 		return
 	}
 	response.Success(c, tasks)
+}
+
+// ListArticles GET /api/v1/admin/crawl/articles
+// @Summary 列出文章（分页 + 过滤）
+// @Tags Crawl
+// @Security BearerAuth
+func (h *CrawlHandler) ListArticles(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	offset, _ := strconv.Atoi(c.Query("offset"))
+	if limit <= 0 {
+		limit = 20
+	}
+	filter := crawldomain.ArticleFilter{
+		SourceID: c.Query("source_id"),
+		Platform: c.Query("platform"),
+		Language: c.Query("language"),
+		Keyword:  c.Query("keyword"),
+		Limit:    limit,
+		Offset:   offset,
+	}
+	articles, total, err := h.svc.ListArticles(c.Request.Context(), filter)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Success(c, gin.H{"articles": articles, "total": total})
+}
+
+// GetArticle GET /api/v1/admin/crawl/articles/:id
+// @Summary 获取文章详情
+// @Tags Crawl
+// @Security BearerAuth
+func (h *CrawlHandler) GetArticle(c *gin.Context) {
+	id := c.Param("id")
+	article, err := h.svc.GetArticle(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Error(c, apperrors.NewAppError("CRAWL.NOT_FOUND", "文章不存在", http.StatusNotFound).WithError(err))
+			return
+		}
+		response.Error(c, err)
+		return
+	}
+	response.Success(c, article)
+}
+
+// DashboardStats GET /api/v1/admin/crawl/dashboard/stats
+// @Summary 获取 Dashboard 统计数据
+// @Tags Crawl
+// @Security BearerAuth
+func (h *CrawlHandler) DashboardStats(c *gin.Context) {
+	stats, err := h.svc.GetDashboardStats(c.Request.Context())
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Success(c, stats)
 }

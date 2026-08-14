@@ -5,13 +5,7 @@
 import {
   DashboardOutlined,
   TeamOutlined,
-  AimOutlined,
   FileTextOutlined,
-  SmileOutlined,
-  CheckCircleOutlined,
-  StarOutlined,
-  ShopOutlined,
-  SwapOutlined,
   UserOutlined,
   LockOutlined,
   AuditOutlined,
@@ -20,19 +14,18 @@ import {
   MenuOutlined,
   BuildOutlined,
   ApiOutlined,
+  GlobalOutlined,
+  DatabaseOutlined,
+  UnorderedListOutlined,
+  ReadOutlined,
+  MailOutlined,
 } from '@ant-design/icons'
 import React, { type ReactNode } from 'react'
 
 const iconMap: Record<string, ReactNode> = {
   DashboardOutlined: React.createElement(DashboardOutlined),
   TeamOutlined: React.createElement(TeamOutlined),
-  AimOutlined: React.createElement(AimOutlined),
   FileTextOutlined: React.createElement(FileTextOutlined),
-  SmileOutlined: React.createElement(SmileOutlined),
-  CheckCircleOutlined: React.createElement(CheckCircleOutlined),
-  StarOutlined: React.createElement(StarOutlined),
-  ShopOutlined: React.createElement(ShopOutlined),
-  SwapOutlined: React.createElement(SwapOutlined),
   UserOutlined: React.createElement(UserOutlined),
   LockOutlined: React.createElement(LockOutlined),
   AuditOutlined: React.createElement(AuditOutlined),
@@ -41,6 +34,11 @@ const iconMap: Record<string, ReactNode> = {
   MenuOutlined: React.createElement(MenuOutlined),
   BuildOutlined: React.createElement(BuildOutlined),
   ApiOutlined: React.createElement(ApiOutlined),
+  GlobalOutlined: React.createElement(GlobalOutlined),
+  DatabaseOutlined: React.createElement(DatabaseOutlined),
+  UnorderedListOutlined: React.createElement(UnorderedListOutlined),
+  ReadOutlined: React.createElement(ReadOutlined),
+  MailOutlined: React.createElement(MailOutlined),
 }
 
 export function getIcon(name: string): ReactNode {

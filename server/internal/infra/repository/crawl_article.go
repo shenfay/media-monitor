@@ -70,6 +70,33 @@ func articleFromDomain(a *crawl.Article) *articlePO {
 	}
 }
 
+func articleToDomain(po *articlePO) *crawl.Article {
+	return &crawl.Article{
+		ID:           po.ID,
+		SourceID:     po.SourceID,
+		Platform:     po.Platform,
+		ExternalID:   po.ExternalID,
+		URL:          po.URL,
+		URLHash:      po.URLHash,
+		Title:        po.Title,
+		Subtitle:     po.Subtitle,
+		Summary:      po.Summary,
+		Body:         po.Body,
+		BodyFormat:   po.BodyFormat,
+		Channel:      po.Channel,
+		Author:       po.Author,
+		SourceName:   po.SourceName,
+		PublishedAt:  po.PublishedAt,
+		Language:     po.Language,
+		Interactions: []byte(po.Interactions),
+		Media:        []byte(po.Media),
+		ThreadID:     po.ThreadID,
+		RawPayload:   []byte(po.RawPayload),
+		FetchedAt:    po.FetchedAt,
+		CreatedAt:    po.CreatedAt,
+	}
+}
+
 // computeURLHash 计算 URL 的 MD5 哈希值
 func computeURLHash(url string) string {
 	if url == "" {
@@ -112,4 +139,51 @@ func (r *articleRepository) UpsertBatch(ctx context.Context, articles []*crawl.A
 		return 0, err
 	}
 	return len(articles), nil
+}
+
+// List 按过滤条件分页查询文章
+func (r *articleRepository) List(ctx context.Context, filter crawl.ArticleFilter) ([]*crawl.Article, int, error) {
+	query := r.db.WithContext(ctx).Model(&articlePO{})
+	if filter.SourceID != "" {
+		query = query.Where("source_id = ?", filter.SourceID)
+	}
+	if filter.Platform != "" {
+		query = query.Where("platform = ?", filter.Platform)
+	}
+	if filter.Language != "" {
+		query = query.Where("language = ?", filter.Language)
+	}
+	if filter.Keyword != "" {
+		query = query.Where("title ILIKE ?", "%"+filter.Keyword+"%")
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	limit := filter.Limit
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	var pos []*articlePO
+	if err := query.Order("created_at DESC").Offset(filter.Offset).Limit(limit).Find(&pos).Error; err != nil {
+		return nil, 0, err
+	}
+
+	articles := make([]*crawl.Article, 0, len(pos))
+	for _, po := range pos {
+		articles = append(articles, articleToDomain(po))
+	}
+	return articles, int(total), nil
+}
+
+// FindByID 按 ID 查询单篇文章
+func (r *articleRepository) FindByID(ctx context.Context, id string) (*crawl.Article, error) {
+	var po articlePO
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&po).Error; err != nil {
+		return nil, err
+	}
+	return articleToDomain(&po), nil
 }

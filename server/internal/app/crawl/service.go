@@ -45,6 +45,7 @@ type Service struct {
 	sources  crawl.SourceRepository
 	articles crawl.ArticleRepository
 	tasks    crawl.TaskRunRepository
+	db       *gorm.DB
 	redis    *redis.Client
 	cfg      config.ScraperConfig
 }
@@ -54,10 +55,11 @@ func NewService(
 	sources crawl.SourceRepository,
 	articles crawl.ArticleRepository,
 	tasks crawl.TaskRunRepository,
+	db *gorm.DB,
 	rdb *redis.Client,
 	cfg config.ScraperConfig,
 ) *Service {
-	return &Service{sources: sources, articles: articles, tasks: tasks, redis: rdb, cfg: cfg}
+	return &Service{sources: sources, articles: articles, tasks: tasks, db: db, redis: rdb, cfg: cfg}
 }
 
 // CreateSource 创建数据源（auth 由仓储层加密）

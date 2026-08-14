@@ -26,7 +26,7 @@ func (h *WorkerHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/workers/:id/shutdown", h.ShutdownWorker)
 }
 
-// ListWorkers GET /api/v1/crawl/workers
+// ListWorkers GET /api/v1/admin/crawl/workers
 // @Summary 列出所有 Worker 实例
 // @Tags Worker
 // @Security BearerAuth
@@ -40,7 +40,7 @@ func (h *WorkerHandler) ListWorkers(c *gin.Context) {
 	response.Success(c, workers)
 }
 
-// ListAdapters GET /api/v1/crawl/workers/adapters
+// ListAdapters GET /api/v1/admin/crawl/workers/adapters
 // @Summary 列出所有已知适配器
 // @Tags Worker
 // @Security BearerAuth
@@ -54,7 +54,7 @@ func (h *WorkerHandler) ListAdapters(c *gin.Context) {
 	response.Success(c, adapters)
 }
 
-// PauseWorker POST /api/v1/crawl/workers/:id/pause
+// PauseWorker POST /api/v1/admin/crawl/workers/:id/pause
 // @Summary 暂停 Worker
 // @Tags Worker
 // @Security BearerAuth
@@ -68,7 +68,7 @@ func (h *WorkerHandler) PauseWorker(c *gin.Context) {
 	response.Success(c, gin.H{"message": "pause command sent"})
 }
 
-// ResumeWorker POST /api/v1/crawl/workers/:id/resume
+// ResumeWorker POST /api/v1/admin/crawl/workers/:id/resume
 // @Summary 恢复 Worker
 // @Tags Worker
 // @Security BearerAuth
@@ -82,7 +82,7 @@ func (h *WorkerHandler) ResumeWorker(c *gin.Context) {
 	response.Success(c, gin.H{"message": "resume command sent"})
 }
 
-// ShutdownWorker POST /api/v1/crawl/workers/:id/shutdown
+// ShutdownWorker POST /api/v1/admin/crawl/workers/:id/shutdown
 // @Summary 下线 Worker（优雅停止）
 // @Tags Worker
 // @Security BearerAuth

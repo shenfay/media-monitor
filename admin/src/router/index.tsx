@@ -9,15 +9,6 @@ import Login from '@/pages/Login'
 
 // 业务页面懒加载
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const Family = lazy(() => import('@/pages/Family'))
-const Goal = lazy(() => import('@/pages/Goal'))
-const CardTemplate = lazy(() => import('@/pages/CardTemplate'))
-const CardInstance = lazy(() => import('@/pages/CardInstance'))
-const Companion = lazy(() => import('@/pages/Companion'))
-const Acceptance = lazy(() => import('@/pages/Acceptance'))
-const PointsRecord = lazy(() => import('@/pages/PointsRecord'))
-const ShopItem = lazy(() => import('@/pages/ShopItem'))
-const ExchangeOrder = lazy(() => import('@/pages/ExchangeOrder'))
 const UserManagement = lazy(() => import('@/pages/UserManagement'))
 const PermissionManagement = lazy(() => import('@/pages/PermissionManagement'))
 const MenuManagement = lazy(() => import('@/pages/MenuManagement'))
@@ -29,6 +20,9 @@ const SystemSettings = lazy(() => import('@/pages/SystemSettings'))
 const DesignSystem = lazy(() => import('@/pages/DesignSystem'))
 const WebSocketTest = lazy(() => import('@/pages/WebSocketTest'))
 const WorkerManagement = lazy(() => import('@/pages/WorkerManagement'))
+const SourceManagement = lazy(() => import('@/pages/SourceManagement'))
+const TaskManagement = lazy(() => import('@/pages/TaskManagement'))
+const ArticleManagement = lazy(() => import('@/pages/ArticleManagement'))
 
 /** 懒加载 fallback 加载指示器 */
 const PageLoading = () => (
@@ -56,42 +50,6 @@ const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <PermissionGuard permission="dashboard:view"><Dashboard /></PermissionGuard>,
-      },
-      {
-        path: 'family',
-        element: <PermissionGuard permission="family:manage"><Family /></PermissionGuard>,
-      },
-      {
-        path: 'goals',
-        element: <PermissionGuard permission="goal:manage"><Goal /></PermissionGuard>,
-      },
-      {
-        path: 'card-templates',
-        element: <PermissionGuard permission="card_template:manage"><CardTemplate /></PermissionGuard>,
-      },
-      {
-        path: 'card-instances',
-        element: <PermissionGuard permission="card_instance:view"><CardInstance /></PermissionGuard>,
-      },
-      {
-        path: 'companions',
-        element: <PermissionGuard permission="companion:manage"><Companion /></PermissionGuard>,
-      },
-      {
-        path: 'acceptance',
-        element: <PermissionGuard permission="acceptance:manage"><Acceptance /></PermissionGuard>,
-      },
-      {
-        path: 'points',
-        element: <PermissionGuard permission="points:view"><PointsRecord /></PermissionGuard>,
-      },
-      {
-        path: 'shop-items',
-        element: <PermissionGuard permission="shop_item:manage"><ShopItem /></PermissionGuard>,
-      },
-      {
-        path: 'exchange-orders',
-        element: <PermissionGuard permission="exchange_order:manage"><ExchangeOrder /></PermissionGuard>,
       },
       {
         path: 'users',
@@ -132,6 +90,18 @@ const router = createBrowserRouter([
       {
         path: 'settings',
         element: <PermissionGuard permission="setting:manage"><SystemSettings /></PermissionGuard>,
+      },
+      {
+        path: 'crawl/sources',
+        element: <PermissionGuard permission="source:view"><SourceManagement /></PermissionGuard>,
+      },
+      {
+        path: 'crawl/tasks',
+        element: <PermissionGuard permission="task:view"><TaskManagement /></PermissionGuard>,
+      },
+      {
+        path: 'crawl/articles',
+        element: <PermissionGuard permission="article:view"><ArticleManagement /></PermissionGuard>,
       },
       {
         path: 'crawl/workers',

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Form, Input, Button, Avatar, Descriptions, Divider, message, Tabs, Tag } from 'antd'
+import { Form, Input, Button, Avatar, Descriptions, Divider, message, Tabs, Tag, Alert } from 'antd'
 import { UserOutlined, LockOutlined, BellOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '@/stores'
@@ -15,11 +15,11 @@ export default function Profile() {
   const roleLabels = roles.map(r => r.name).join('、') || t('noRole')
 
   const handleSaveProfile = () => {
-    message.success(t('updateSuccess'))
+    message.info(t('profileNotAvailable'))
   }
 
   const handleChangePassword = () => {
-    message.success(t('updateSuccess'))
+    message.info(t('passwordNotAvailable'))
   }
 
   return (
@@ -84,7 +84,8 @@ export default function Profile() {
                   <Form.Item label={t('bio')} name="bio">
                     <Input.TextArea rows={3} placeholder={t('bioPlaceholder')} />
                   </Form.Item>
-                  <Button type="primary" onClick={handleSaveProfile}>{t('saveChanges')}</Button>
+                  <Alert type="info" showIcon message={t('profileEditHint')} style={{ marginBottom: 16 }} />
+                  <Button onClick={handleSaveProfile}>{t('saveChanges')}</Button>
                 </Form>
               </div>
             ),
@@ -124,7 +125,8 @@ export default function Profile() {
                   ]}>
                     <Input.Password />
                   </Form.Item>
-                  <Button type="primary" onClick={handleChangePassword}>{t('changePassword')}</Button>
+                  <Alert type="info" showIcon message={t('passwordNotAvailable')} style={{ marginBottom: 16 }} />
+                  <Button onClick={handleChangePassword}>{t('changePassword')}</Button>
                 </Form>
               </div>
             ),
@@ -153,7 +155,7 @@ export default function Profile() {
                       {t('smsNotifyDesc')}
                     </div>
                   </Form.Item>
-                  <Button type="primary">{t('saveSettings')}</Button>
+                  <Button onClick={() => message.info(t('notifyNotAvailable'))}>{t('saveSettings')}</Button>
                 </Form>
               </div>
             ),

@@ -30,15 +30,23 @@ var RoutePermissions = map[string]string{
 	"PATCH:/api/v1/admin/menus/:id/status": "menu:manage",
 	"PUT:/api/v1/admin/menus/sort":         "menu:manage",
 
-	// 抓取模块（Go↔Python 集成）
-	"GET:/api/v1/crawl/sources":              "crawl:manage",
-	"POST:/api/v1/crawl/sources":             "crawl:manage",
-	"PUT:/api/v1/crawl/sources/:id":          "crawl:manage",
-	"DELETE:/api/v1/crawl/sources/:id":       "crawl:manage",
-	"POST:/api/v1/crawl/sources/:id/run":     "crawl:manage",
-	"POST:/api/v1/crawl/tasks":               "crawl:manage",
-	"GET:/api/v1/crawl/tasks":                "crawl:manage",
-	"GET:/api/v1/crawl/tasks/:id":            "crawl:manage",
+	// 抓取模块（管理后台）
+	"GET:/api/v1/admin/crawl/sources":              "source:view",
+	"POST:/api/v1/admin/crawl/sources":             "source:manage",
+	"PUT:/api/v1/admin/crawl/sources/:id":          "source:manage",
+	"DELETE:/api/v1/admin/crawl/sources/:id":       "source:manage",
+	"POST:/api/v1/admin/crawl/sources/:id/run":     "source:manage",
+	"POST:/api/v1/admin/crawl/tasks":               "task:manage",
+	"GET:/api/v1/admin/crawl/tasks":                "task:view",
+	"GET:/api/v1/admin/crawl/tasks/:id":            "task:view",
+	"GET:/api/v1/admin/crawl/articles":             "article:view",
+	"GET:/api/v1/admin/crawl/articles/:id":         "article:view",
+	"GET:/api/v1/admin/crawl/dashboard/stats":      "crawl:view",
+	"GET:/api/v1/admin/crawl/workers":              "worker:view",
+	"GET:/api/v1/admin/crawl/workers/adapters":     "worker:view",
+	"POST:/api/v1/admin/crawl/workers/:id/pause":   "worker:manage",
+	"POST:/api/v1/admin/crawl/workers/:id/resume":  "worker:manage",
+	"POST:/api/v1/admin/crawl/workers/:id/shutdown": "worker:manage",
 }
 
 // PermissionMiddleware 基于 Casbin 的权限检查中间件
