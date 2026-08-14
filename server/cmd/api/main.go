@@ -24,7 +24,6 @@ import (
 	"github.com/shenfay/go-react-admin/internal/app/admin"
 	"github.com/shenfay/go-react-admin/internal/app/authentication"
 	crawlapp "github.com/shenfay/go-react-admin/internal/app/crawl"
-	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
 	"github.com/shenfay/go-react-admin/internal/app/emailverification"
 	notificationapp "github.com/shenfay/go-react-admin/internal/app/notification"
 	"github.com/shenfay/go-react-admin/internal/app/passwordreset"
@@ -32,6 +31,7 @@ import (
 	appsetting "github.com/shenfay/go-react-admin/internal/app/setting"
 	"github.com/shenfay/go-react-admin/internal/app/shared/operationlog"
 	"github.com/shenfay/go-react-admin/internal/app/tokenmanager"
+	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
 	"github.com/shenfay/go-react-admin/internal/domain/notification"
 	"github.com/shenfay/go-react-admin/internal/domain/operation"
 	"github.com/shenfay/go-react-admin/internal/domain/rbac"
@@ -142,7 +142,7 @@ type repoDeps struct {
 	messageRepo notification.MessageRepository
 
 	// 抓取模块（Go↔Python 集成）
-	crawlSourceRepo crawldomain.SourceRepository
+	crawlSourceRepo  crawldomain.SourceRepository
 	crawlArticleRepo crawldomain.ArticleRepository
 	crawlTaskRepo    crawldomain.TaskRunRepository
 }
@@ -169,7 +169,7 @@ type handlerDeps struct {
 	settingHdlr      *handlers.SettingHandler
 	notificationHdlr *handlers.NotificationHandler
 	wsHandler        *handlers.WSHandler
-	crawlHdlr       *handlers.CrawlHandler
+	crawlHdlr        *handlers.CrawlHandler
 }
 
 // --- Provider 函数 ---
@@ -206,7 +206,11 @@ func initInfrastructure(cfg *config.Config, m *metrics.Metrics) *infraDeps {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	redisClient := initRedis(cfg.Redis)
-	asynqClient := asynq.NewClient(asynq.RedisClientOpt{Addr: cfg.Asynq.Addr})
+	asynqClient := asynq.NewClient(asynq.RedisClientOpt{
+		Addr:     cfg.Asynq.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
 
 	bus := bus.NewInProcessBus()
 	bridge := messaging.NewBridge(asynqClient)
@@ -253,7 +257,7 @@ func initRepositories(db *gorm.DB) *repoDeps {
 		messageRepo: repository.NewMessageRepository(db),
 
 		// 抓取模块（Go↔Python 集成）
-		crawlSourceRepo: repository.NewCrawlSourceRepository(db),
+		crawlSourceRepo:  repository.NewCrawlSourceRepository(db),
 		crawlArticleRepo: repository.NewCrawlArticleRepository(db),
 		crawlTaskRepo:    repository.NewCrawlTaskRunRepository(db),
 	}
@@ -358,7 +362,7 @@ func initHandlers(svcs *svcDeps, repos *repoDeps, infra *infraDeps) *handlerDeps
 		operLogHdlr:      handlers.NewOperationLogHandler(repos.operLogRepo),
 		settingHdlr:      handlers.NewSettingHandler(svcs.settingSvc),
 		notificationHdlr: handlers.NewNotificationHandler(svcs.notificationSvc),
-		crawlHdlr:       handlers.NewCrawlHandler(svcs.crawlSvc),
+		crawlHdlr:        handlers.NewCrawlHandler(svcs.crawlSvc),
 	}
 	// WebSocket 处理器（仅在启用时创建）
 	if infra.hub != nil {

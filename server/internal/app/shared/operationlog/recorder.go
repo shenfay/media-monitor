@@ -25,6 +25,7 @@ func NewOperationRecorder(eventBus events.Bus) *OperationRecorder {
 
 // Record 记录操作日志（显式传入用户信息）
 // 适用于认证场景（Login/Register/Logout），此时用户信息尚未注入 context
+// 事件发布采用异步方式，避免阻塞主请求链路（如登录流程）
 func (r *OperationRecorder) Record(ctx context.Context, action, category, status string, userID, email string, metadata map[string]interface{}) {
 	if r.eventBus == nil {
 		return
@@ -41,13 +42,18 @@ func (r *OperationRecorder) Record(ctx context.Context, action, category, status
 		).
 		WithMetadata(metadata)
 
-	if err := r.eventBus.Publish(ctx, evt); err != nil {
-		logger.Warn("Failed to record operation log",
-			"action", action,
-			"user_id", userID,
-			"error", err,
-		)
-	}
+	// 异步发布事件，避免 Bridge → Asynq 入队阻塞主请求
+	go func() {
+		// 使用 background context，避免请求 context 取消导致事件丢失
+		bgCtx := context.Background()
+		if err := r.eventBus.Publish(bgCtx, evt); err != nil {
+			logger.Warn("Failed to record operation log",
+				"action", action,
+				"user_id", userID,
+				"error", err,
+			)
+		}
+	}()
 }
 
 // RecordFromContext 记录操作日志（从 context 自动提取操作人信息）
