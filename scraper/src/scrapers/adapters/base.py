@@ -16,6 +16,7 @@ from scrapers.contracts.source import Source
 class BaseAdapter(ABC):
     platform_type: str = "news"
     name: str = "base"
+    required_tags: list[str] = []  # 适配器声明所需能力标签（如 ["overseas"]）
 
     @abstractmethod
     def fetch_list(self, source: Source, limit: int = 200) -> list[Article]:

@@ -37,35 +37,122 @@ def serve(
     import scrapers.adapters  # noqa: F401
 
     from scrapers.core.executor import TaskExecutor
-    from scrapers.core.registry import list_registered
-    from scrapers.streams.consumer import TaskConsumer
+    from scrapers.core.registry import list_metadata, get_all_required_tags
+    from scrapers.core.worker_registry import WorkerRegistration
+    from scrapers.streams.consumer import MultiStreamConsumer
+    from scrapers.streams.control_listener import ControlListener
     from scrapers.streams.event_emitter import TaskEventEmitter
     from scrapers.streams.publisher import ArticlePublisher
+    from scrapers.streams.stream_router import StreamRouter
 
-    registered = list_registered()
-    logger.info("Registered adapters: %s", registered)
+    # 收集 adapter 元数据与能力标签
+    adapters_meta = list_metadata()
+    capabilities = get_all_required_tags()
+    logger.info("Registered adapters: %s", list(adapters_meta.keys()))
+    logger.info("Worker capabilities: %s", capabilities)
 
-    consumer = TaskConsumer()
+    # Worker 注册与心跳
+    registration = WorkerRegistration(
+        adapters_metadata=list(adapters_meta.values()),
+        capabilities=capabilities,
+    )
+    registration.register()
+    registration.start_heartbeat()
+
+    # Stream 路由：计算当前 Worker 需要消费的流
+    import redis as redis_lib
+    redis_conn = redis_lib.Redis.from_url(config.settings.redis_url, decode_responses=True)
+    adapter_required_tags = {
+        name: meta.get("required_tags", [])
+        for name, meta in adapters_meta.items()
+    }
+    stream_router = StreamRouter(
+        redis_conn=redis_conn,
+        capabilities=capabilities,
+        adapter_required_tags=adapter_required_tags,
+    )
+    initial_streams = stream_router.compute_streams()
+    logger.info("Initial streams: %s", initial_streams)
+
+    consumer = MultiStreamConsumer(
+        streams=initial_streams,
+        consumer_name=registration.worker_id,
+    )
     publisher = ArticlePublisher()
     emitter = TaskEventEmitter()
     executor = TaskExecutor(publisher, emitter)
 
+    # 控制状态
+    paused = False
+    shutdown_requested = False
+
+    def on_pause():
+        nonlocal paused
+        paused = True
+        logger.info("Worker paused")
+
+    def on_resume():
+        nonlocal paused
+        paused = False
+        logger.info("Worker resumed")
+
+    def on_shutdown():
+        nonlocal shutdown_requested
+        shutdown_requested = True
+        logger.info("Shutdown requested")
+
+    def on_recalculate():
+        new_streams = stream_router.compute_streams()
+        consumer.update_streams(new_streams)
+        logger.info("Streams recalculated: %s", new_streams)
+
+    # 控制监听器
+    control = ControlListener(
+        worker_id=registration.worker_id,
+        redis_conn=redis_conn,
+        on_pause=on_pause,
+        on_resume=on_resume,
+        on_shutdown=on_shutdown,
+        on_recalculate=on_recalculate,
+    )
+    control.start()
+
     logger.info("Scraper worker starting...")
+    processed = 0
     try:
-        for msg_id, task in consumer.consume():
-            logger.info("Received task: id=%s source=%s", task.task_id, task.source_id)
+        for stream_name, msg_id, task in consumer.consume():
+            if shutdown_requested:
+                logger.info("Shutdown requested, stopping...")
+                break
+            # 暂停时跳过任务执行，但继续消费（消息会留在 PEL 中）
+            if paused:
+                import time as _time
+                while paused and not shutdown_requested:
+                    _time.sleep(1)
+                if shutdown_requested:
+                    break
+            logger.info(
+                "Received task: stream=%s id=%s source=%s",
+                stream_name, task.task_id, task.source_id,
+            )
+            registration.update_status(current_task=task.task_id)
             try:
                 executor.execute(task)
             except Exception:
                 logger.exception("Task execution failed: %s", task.task_id)
                 emitter.task_failed(task.task_id, "unhandled error")
-            consumer.ack(msg_id)
+            consumer.ack(stream_name, msg_id)
+            processed += 1
+            registration.update_status(current_task="", processed_count=processed)
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
+        control.stop()
+        registration.deregister()
         consumer.close()
         publisher.close()
         emitter.close()
+        redis_conn.close()
 
 
 @app.command()

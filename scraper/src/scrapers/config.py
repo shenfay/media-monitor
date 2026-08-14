@@ -17,6 +17,10 @@ DEFAULTS = {
     "MM_HTTP_RETRIES": "3",
     "MM_BATCH_SIZE": "20",
     "MM_MAX_STREAM_LEN": "500",
+    "MM_WORKER_ID": "",
+    "MM_WORKER_NAME": "",
+    "MM_HEARTBEAT_INTERVAL": "20",
+    "MM_HEARTBEAT_TTL": "60",
 }
 
 
@@ -35,6 +39,10 @@ class Settings:
     http_retries = int(get("MM_HTTP_RETRIES") or 3)
     batch_size = int(get("MM_BATCH_SIZE") or 20)
     max_stream_len = int(get("MM_MAX_STREAM_LEN") or 500)
+    worker_id = get("MM_WORKER_ID") or ""
+    worker_name = get("MM_WORKER_NAME") or ""
+    heartbeat_interval = int(get("MM_HEARTBEAT_INTERVAL") or 20)
+    heartbeat_ttl = int(get("MM_HEARTBEAT_TTL") or 60)
 
 
 settings = Settings()

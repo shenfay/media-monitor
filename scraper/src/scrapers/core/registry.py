@@ -54,3 +54,27 @@ def auto_discover() -> None:
 def list_registered() -> dict[str, str]:
     """返回当前注册表 {name: class_name}，用于调试/健康检查。"""
     return {name: cls.__name__ for name, cls in _REGISTRY.items()}
+
+
+def list_metadata() -> dict[str, dict]:
+    """返回所有已注册适配器的元数据，用于 Worker 注册上报。
+
+    返回格式: {name: {class_name, required_tags, platform_type}}
+    """
+    result = {}
+    for name, cls in _REGISTRY.items():
+        result[name] = {
+            "class_name": cls.__name__,
+            "required_tags": list(getattr(cls, "required_tags", [])),
+            "platform_type": getattr(cls, "platform_type", "news"),
+        }
+    return result
+
+
+def get_all_required_tags() -> list[str]:
+    """返回所有已注册适配器的 required_tags 并集（去重）。"""
+    tags: set[str] = set()
+    for cls in _REGISTRY.values():
+        for tag in getattr(cls, "required_tags", []):
+            tags.add(tag)
+    return sorted(tags)

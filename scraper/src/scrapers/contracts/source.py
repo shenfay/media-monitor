@@ -21,6 +21,7 @@ class Source:
     months: int = 6                       # 时间窗（近 N 月）
     schedule: str = ""                    # cron 表达式
     auth: dict = dataclasses.field(default_factory=dict)  # 社媒登录态/cookie/token
+    tags: list[str] = dataclasses.field(default_factory=list)  # 能力标签（如 overseas），用于 Stream 路由
     enabled: bool = True
     extra: dict = dataclasses.field(default_factory=dict)
 
@@ -38,6 +39,7 @@ class Source:
             months=int(d.get("months") or 6),
             schedule=d.get("schedule", ""),
             auth=d.get("auth") or {},
+            tags=d.get("tags") or [],
             enabled=bool(d.get("enabled", True)),
             extra=d.get("extra") or {},
         )
@@ -54,6 +56,7 @@ class Source:
             "months": self.months,
             "schedule": self.schedule,
             "auth": self.auth,
+            "tags": self.tags,
             "enabled": self.enabled,
             "extra": self.extra,
         }
