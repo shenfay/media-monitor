@@ -39,3 +39,11 @@ docker-data/
 *.pem
 *.key
 *.crt
+
+# Python scraper
+scraper/dist/
+scraper/*.egg-info/
+scraper/.venv/
+scraper/**/__pycache__/
+scraper/.pytest_cache/
+scraper/.mypy_cache/

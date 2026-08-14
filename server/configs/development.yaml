@@ -8,9 +8,9 @@ server:
 database:
   host: localhost
   port: 5432
-  name: go_react_admin
-  user: shenfay
-  password: postgres
+  name: media-monitor
+  user: media-monitor
+  password: FNpm4JrF3jHWNjCX
   ssl_mode: disable
   max_open_conns: 25
   max_idle_conns: 5
@@ -80,3 +80,9 @@ email:
 # WebSocket 实时推送配置
 websocket:
   enabled: true  # 是否启用 WebSocket 端点（设为 false 则完全禁用实时推送）
+
+# Python 抓取服务对接配置（Go↔Python 集成缝）
+scraper:
+  base_url: ""                                   # Python 服务地址（预留，当前 Python 为常驻消费模式，可不填）
+  api_key: "change-me-in-production"             # 服务间共享密钥，必须与 Python 侧 MM_SCRAPER_API_KEY 一致
+  stream: "crawl:tasks"                          # Redis Stream 任务队列名，须与 Python 侧 MM_CRAWL_STREAM 一致
