@@ -17,6 +17,7 @@ import (
 	"github.com/shenfay/go-react-admin/internal/infra/mail"
 	"github.com/shenfay/go-react-admin/internal/infra/messaging"
 	"github.com/shenfay/go-react-admin/internal/infra/repository"
+	crawlapp "github.com/shenfay/go-react-admin/internal/app/crawl"
 	workerhandlers "github.com/shenfay/go-react-admin/internal/transport/worker/handlers"
 	"github.com/shenfay/go-react-admin/pkg/constants"
 	"github.com/shenfay/go-react-admin/pkg/logger"
@@ -71,6 +72,12 @@ func main() {
 	// 4. 初始化仓储
 	operationLogRepo := repository.NewOperationLogRepository(db)
 
+	// 抓取模块（Go↔Python Stream 集成）：调度器入队 Redis Stream，Python 消费执行
+	crawlSourceRepo := repository.NewCrawlSourceRepository(db)
+	crawlArticleRepo := repository.NewCrawlArticleRepository(db)
+	crawlTaskRepo := repository.NewCrawlTaskRunRepository(db)
+	crawlSvc := crawlapp.NewService(crawlSourceRepo, crawlArticleRepo, crawlTaskRepo, redisClient, cfg.Scraper)
+
 	// 5. 创建处理器
 	operationLogHandler := workerhandlers.NewOperationLogHandler(operationLogRepo)
 
@@ -80,6 +87,21 @@ func main() {
 
 	// 6. 注册 Asynq 任务处理器
 	mux := asynq.NewServeMux()
+
+	// 抓取定时调度：cron 到点 → 入队 Redis Stream（crawl:task:dispatch）
+	mux.HandleFunc(crawlapp.SchedulerTaskType, crawlapp.ScheduleHandler(crawlSvc))
+	crawlapp.StartScheduler(asynq.RedisClientOpt{
+		Addr:     cfg.Asynq.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	}, crawlSvc)
+
+	// Stream 消费者：消费 Python Worker 回传的文章和事件
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	defer workerCancel()
+	go crawlSvc.StartArticleConsumer(workerCtx)
+	go crawlSvc.StartEventConsumer(workerCtx)
+	logger.Info("Stream consumers started (article + event)")
 
 	// 从事件注册表获取所有路由到 logs 队列的事件类型（单一真相来源）
 	for _, eventName := range messaging.LogEventTypes() {

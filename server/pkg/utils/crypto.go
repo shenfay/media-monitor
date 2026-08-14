@@ -10,11 +10,15 @@ import (
 	"os"
 )
 
-// encryptionKey 从环境变量读取加密密钥（32 字节 = AES-256）
+// getEncryptionKey 从环境变量读取加密密钥（32 字节 = AES-256）
+// 优先读取 APP_ENCRYPTION_KEY（.env 文件格式），兼容 ENCRYPTION_KEY
 func getEncryptionKey() ([]byte, error) {
-	key := os.Getenv("ENCRYPTION_KEY")
+	key := os.Getenv("APP_ENCRYPTION_KEY")
 	if key == "" {
-		return nil, fmt.Errorf("ENCRYPTION_KEY environment variable is not set")
+		key = os.Getenv("ENCRYPTION_KEY")
+	}
+	if key == "" {
+		return nil, fmt.Errorf("encryption key not set: please set APP_ENCRYPTION_KEY in .env file")
 	}
 	// 确保密钥长度为 32 字节（AES-256）
 	keyBytes := []byte(key)

@@ -2,23 +2,30 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 // Config 应用程序配置
 type Config struct {
-	Server    ServerConfig    `mapstructure:"server"`
-	Database  DatabaseConfig  `mapstructure:"database"`
-	Redis     RedisConfig     `mapstructure:"redis"`
-	JWT       JWTConfig       `mapstructure:"jwt"`
-	Asynq     AsynqConfig     `mapstructure:"asynq"`
-	Logger    LoggerConfig    `mapstructure:"logger"`
-	CORS      CORSConfig      `mapstructure:"cors"`
-	Auth      AuthConfig      `mapstructure:"auth"`
-	Email     EmailConfig     `mapstructure:"email"`
-	WebSocket WebSocketConfig `mapstructure:"websocket"`
+	Server      ServerConfig      `mapstructure:"server"`
+	Database    DatabaseConfig    `mapstructure:"database"`
+	Redis       RedisConfig       `mapstructure:"redis"`
+	JWT         JWTConfig         `mapstructure:"jwt"`
+	Asynq       AsynqConfig       `mapstructure:"asynq"`
+	Logger      LoggerConfig      `mapstructure:"logger"`
+	CORS        CORSConfig        `mapstructure:"cors"`
+	Auth        AuthConfig        `mapstructure:"auth"`
+	Email       EmailConfig       `mapstructure:"email"`
+	WebSocket   WebSocketConfig   `mapstructure:"websocket"`
+	Encryption  EncryptionConfig  `mapstructure:"encryption"`
+	RateLimit   RateLimitConfig   `mapstructure:"rate_limit"`
+	Scraper     ScraperConfig     `mapstructure:"scraper"`
 }
 
 // ServerConfig HTTP 服务器配置
@@ -114,18 +121,50 @@ type WebSocketConfig struct {
 	Enabled bool `mapstructure:"enabled"` // 是否启用 WebSocket 端点
 }
 
+// EncryptionConfig 加密配置
+type EncryptionConfig struct {
+	Key string `mapstructure:"key"` // AES-256-GCM 加密密钥（至少 32 字符）
+}
+
+// RateLimitConfig 速率限制配置
+type RateLimitConfig struct {
+	Enabled  bool              `mapstructure:"enabled"`
+	General  RateLimitItemConfig `mapstructure:"general"`
+	Login    RateLimitItemConfig `mapstructure:"login"`
+	Register RateLimitItemConfig `mapstructure:"register"`
+}
+
+// RateLimitItemConfig 速率限制项配置
+type RateLimitItemConfig struct {
+	Rate  int `mapstructure:"rate"`
+	Burst int `mapstructure:"burst"`
+}
+
+// ScraperConfig Python 抓取服务对接配置（Go↔Python Stream 集成缝）
+type ScraperConfig struct {
+	Stream        string `mapstructure:"stream"`         // Redis Stream 任务分发队列名，默认 crawl:task:dispatch
+	ArticleStream string `mapstructure:"article_stream"` // Redis Stream 文章回传队列名，默认 crawl:article:ingest
+	EventStream   string `mapstructure:"event_stream"`   // Redis Stream 事件回传队列名，默认 crawl:task:event
+	ConsumerGroup string `mapstructure:"consumer_group"` // Stream 消费者组名，默认 crawl:go
+}
+
 // Load 加载配置
+// 配置优先级：环境变量 > .env 文件 > YAML 配置文件 > 默认值
 func Load(env string) (*Config, error) {
-	// 设置配置文件路径
+	// 1. 加载 .env 文件（如果存在），将变量注入进程环境变量
+	// 优先加载 configs/.env，其次加载项目根目录的 .env
+	// 注意：godotenv.Load 不会覆盖已存在的环境变量
+	for _, envFile := range []string{"configs/.env", ".env"} {
+		if err := godotenv.Load(envFile); err == nil {
+			log.Printf("Loaded .env file: %s", envFile)
+			break
+		}
+	}
+
+	// 2. 读取 YAML 配置文件
 	viper.SetConfigFile(fmt.Sprintf("configs/%s.yaml", env))
-
-	// 允许通过环境变量覆盖配置
-	viper.AutomaticEnv()
-
-	// 设置默认值
 	setDefaults()
 
-	// 读取配置
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -135,7 +174,87 @@ func Load(env string) (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
+	// 3. 用环境变量覆盖配置（.env 加载后已存在于 os.Environ 中）
+	overrideFromEnv(&cfg)
+
 	return &cfg, nil
+}
+
+// overrideFromEnv 使用环境变量覆盖配置值
+// 环境变量命名规则：APP_<SECTION>_<KEY>，如 APP_DATABASE_HOST
+func overrideFromEnv(cfg *Config) {
+	// Server
+	if v := os.Getenv("APP_SERVER_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Server.Port = port
+		}
+	}
+	if v := os.Getenv("APP_SERVER_MODE"); v != "" {
+		cfg.Server.Mode = v
+	}
+
+	// Database
+	if v := os.Getenv("APP_DATABASE_HOST"); v != "" {
+		cfg.Database.Host = v
+	}
+	if v := os.Getenv("APP_DATABASE_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Database.Port = port
+		}
+	}
+	if v := os.Getenv("APP_DATABASE_NAME"); v != "" {
+		cfg.Database.Name = v
+	}
+	if v := os.Getenv("APP_DATABASE_USER"); v != "" {
+		cfg.Database.User = v
+	}
+	if v := os.Getenv("APP_DATABASE_PASSWORD"); v != "" {
+		cfg.Database.Password = v
+	}
+	if v := os.Getenv("APP_DATABASE_SSL_MODE"); v != "" {
+		cfg.Database.SSLMode = v
+	}
+
+	// Redis
+	if v := os.Getenv("APP_REDIS_ADDR"); v != "" {
+		cfg.Redis.Addr = v
+	}
+	if v := os.Getenv("APP_REDIS_PASSWORD"); v != "" {
+		cfg.Redis.Password = v
+	}
+	if v := os.Getenv("APP_REDIS_DB"); v != "" {
+		if db, err := strconv.Atoi(v); err == nil {
+			cfg.Redis.DB = db
+		}
+	}
+
+	// JWT
+	if v := os.Getenv("APP_JWT_SECRET"); v != "" {
+		cfg.JWT.Secret = v
+	}
+	if v := os.Getenv("APP_JWT_ACCESS_EXPIRE"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			cfg.JWT.AccessExpire = d
+		}
+	}
+	if v := os.Getenv("APP_JWT_REFRESH_EXPIRE"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			cfg.JWT.RefreshExpire = d
+		}
+	}
+
+	// Logger
+	if v := os.Getenv("APP_LOGGING_LEVEL"); v != "" {
+		cfg.Logger.Level = v
+	}
+	if v := os.Getenv("APP_LOGGING_FORMAT"); v != "" {
+		cfg.Logger.Format = v
+	}
+
+	// Encryption
+	if v := os.Getenv("APP_ENCRYPTION_KEY"); v != "" {
+		cfg.Encryption.Key = v
+	}
 }
 
 // setDefaults 设置默认值
@@ -209,4 +328,22 @@ func setDefaults() {
 
 	// WebSocket
 	viper.SetDefault("websocket.enabled", true)
+
+	// Encryption
+	viper.SetDefault("encryption.key", "your-encryption-key-change-in-production")
+
+	// Rate Limit
+	viper.SetDefault("rate_limit.enabled", true)
+	viper.SetDefault("rate_limit.general.rate", 60)
+	viper.SetDefault("rate_limit.general.burst", 100)
+	viper.SetDefault("rate_limit.login.rate", 5)
+	viper.SetDefault("rate_limit.login.burst", 10)
+
+	// Scraper（Python 抓取服务对接）
+	viper.SetDefault("scraper.stream", "crawl:task:dispatch")
+	viper.SetDefault("scraper.article_stream", "crawl:article:ingest")
+	viper.SetDefault("scraper.event_stream", "crawl:task:event")
+	viper.SetDefault("scraper.consumer_group", "crawl:go")
+	viper.SetDefault("rate_limit.register.rate", 10)
+	viper.SetDefault("rate_limit.register.burst", 20)
 }

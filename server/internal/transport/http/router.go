@@ -19,6 +19,7 @@ type RouterDeps struct {
 	SettingHandler      *handlers.SettingHandler
 	NotificationHandler *handlers.NotificationHandler
 	WSHandler           *handlers.WSHandler
+	CrawlHandler        *handlers.CrawlHandler
 	TokenManager        authentication.TokenManager
 	Enforcer            *authorize.Enforcer
 }
@@ -32,6 +33,7 @@ type Router struct {
 	settingHandler      *handlers.SettingHandler
 	notificationHandler *handlers.NotificationHandler
 	wsHandler           *handlers.WSHandler
+	crawlHandler        *handlers.CrawlHandler
 	tokenManager        authentication.TokenManager
 	enforcer            *authorize.Enforcer
 	healthHandler       *health.Handler
@@ -47,6 +49,7 @@ func NewRouter(deps *RouterDeps) *Router {
 		settingHandler:      deps.SettingHandler,
 		notificationHandler: deps.NotificationHandler,
 		wsHandler:           deps.WSHandler,
+		crawlHandler:        deps.CrawlHandler,
 		tokenManager:        deps.TokenManager,
 		enforcer:            deps.Enforcer,
 	}
@@ -90,6 +93,7 @@ func (r *Router) Setup() {
 		r.setupOperationLogRoutes(v1)
 		r.setupSettingRoutes(v1)
 		r.setupNotificationRoutes(v1)
+		r.setupCrawlRoutes(v1)
 	}
 
 	// 注册 Swagger UI 路由（开发环境）
@@ -228,5 +232,20 @@ func (r *Router) setupNotificationRoutes(v1 *gin.RouterGroup) {
 	adminMessages.Use(authMiddleware, permMiddleware)
 	{
 		r.notificationHandler.RegisterAdminRoutes(adminMessages)
+	}
+}
+
+// setupCrawlRoutes 配置抓取模块路由（仅管理路由，机器路由已由 Redis Stream 替代）
+func (r *Router) setupCrawlRoutes(v1 *gin.RouterGroup) {
+	authMiddleware := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
+		TokenService: r.tokenManager,
+	})
+	permMiddleware := middleware.PermissionMiddleware(r.enforcer)
+
+	// 管理路由（管理员）
+	admin := v1.Group("/crawl")
+	admin.Use(authMiddleware, permMiddleware)
+	{
+		r.crawlHandler.RegisterAdminRoutes(admin)
 	}
 }

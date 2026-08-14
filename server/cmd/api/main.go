@@ -23,6 +23,8 @@ import (
 
 	"github.com/shenfay/go-react-admin/internal/app/admin"
 	"github.com/shenfay/go-react-admin/internal/app/authentication"
+	crawlapp "github.com/shenfay/go-react-admin/internal/app/crawl"
+	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
 	"github.com/shenfay/go-react-admin/internal/app/emailverification"
 	notificationapp "github.com/shenfay/go-react-admin/internal/app/notification"
 	"github.com/shenfay/go-react-admin/internal/app/passwordreset"
@@ -138,6 +140,11 @@ type repoDeps struct {
 	operLogRepo operation.LogRepository
 	settingRepo setting.Repository
 	messageRepo notification.MessageRepository
+
+	// 抓取模块（Go↔Python 集成）
+	crawlSourceRepo crawldomain.SourceRepository
+	crawlArticleRepo crawldomain.ArticleRepository
+	crawlTaskRepo    crawldomain.TaskRunRepository
 }
 
 // svcDeps 应用服务层依赖
@@ -149,6 +156,9 @@ type svcDeps struct {
 	notificationSvc  *notificationapp.AppService
 	emailVerifySvc   *emailverification.Service
 	passwordResetSvc *passwordreset.Service
+
+	// 抓取模块（Go↔Python 集成）
+	crawlSvc *crawlapp.Service
 }
 
 // handlerDeps 传输层依赖
@@ -159,6 +169,7 @@ type handlerDeps struct {
 	settingHdlr      *handlers.SettingHandler
 	notificationHdlr *handlers.NotificationHandler
 	wsHandler        *handlers.WSHandler
+	crawlHdlr       *handlers.CrawlHandler
 }
 
 // --- Provider 函数 ---
@@ -240,6 +251,11 @@ func initRepositories(db *gorm.DB) *repoDeps {
 		operLogRepo: repository.NewOperationLogRepository(db),
 		settingRepo: repository.NewSettingRepository(db),
 		messageRepo: repository.NewMessageRepository(db),
+
+		// 抓取模块（Go↔Python 集成）
+		crawlSourceRepo: repository.NewCrawlSourceRepository(db),
+		crawlArticleRepo: repository.NewCrawlArticleRepository(db),
+		crawlTaskRepo:    repository.NewCrawlTaskRunRepository(db),
 	}
 }
 
@@ -322,6 +338,15 @@ func initServices(cfg *config.Config, infra *infraDeps, repos *repoDeps, m *metr
 		notificationSvc:  notificationSvc,
 		emailVerifySvc:   emailVerifySvc,
 		passwordResetSvc: passwordResetSvc,
+
+		// 抓取模块（Go↔Python 集成）
+		crawlSvc: crawlapp.NewService(
+			repos.crawlSourceRepo,
+			repos.crawlArticleRepo,
+			repos.crawlTaskRepo,
+			infra.redisClient,
+			cfg.Scraper,
+		),
 	}
 }
 
@@ -333,6 +358,7 @@ func initHandlers(svcs *svcDeps, repos *repoDeps, infra *infraDeps) *handlerDeps
 		operLogHdlr:      handlers.NewOperationLogHandler(repos.operLogRepo),
 		settingHdlr:      handlers.NewSettingHandler(svcs.settingSvc),
 		notificationHdlr: handlers.NewNotificationHandler(svcs.notificationSvc),
+		crawlHdlr:       handlers.NewCrawlHandler(svcs.crawlSvc),
 	}
 	// WebSocket 处理器（仅在启用时创建）
 	if infra.hub != nil {
@@ -374,6 +400,7 @@ func startServer(deps *startDeps) {
 		SettingHandler:      hdls.settingHdlr,
 		NotificationHandler: hdls.notificationHdlr,
 		WSHandler:           hdls.wsHandler,
+		CrawlHandler:        hdls.crawlHdlr,
 		TokenManager:        deps.tokenService,
 		Enforcer:            deps.enforcer,
 	})
