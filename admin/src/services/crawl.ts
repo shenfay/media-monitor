@@ -16,6 +16,7 @@ export interface Source {
   months: number
   schedule: string
   tags: string[]
+  auth: Record<string, string> | null
   enabled: boolean
   last_crawl_at: string | null
   created_at: string
@@ -71,18 +72,16 @@ export interface DashboardStats {
 // ---- Source API ----
 
 export async function getSources(silent = false): Promise<Source[]> {
-  const res = await request.get('/v1/admin/crawl/sources', { silent })
+  const res = await request.get('/v1/admin/crawl/sources', { silent }) as unknown as Source[]
   return res || []
 }
 
 export async function createSource(data: Partial<Source> & { auth?: unknown }): Promise<Source> {
-  const res = await request.post('/v1/admin/crawl/sources', data)
-  return res.data
+  return await request.post('/v1/admin/crawl/sources', data) as unknown as Source
 }
 
 export async function updateSource(id: string, data: Partial<Source> & { auth?: unknown }): Promise<Source> {
-  const res = await request.put(`/v1/admin/crawl/sources/${id}`, data)
-  return res.data
+  return await request.put(`/v1/admin/crawl/sources/${id}`, data) as unknown as Source
 }
 
 export async function deleteSource(id: string): Promise<void> {
@@ -90,25 +89,22 @@ export async function deleteSource(id: string): Promise<void> {
 }
 
 export async function runSource(id: string): Promise<{ task_id: string }> {
-  const res = await request.post(`/v1/admin/crawl/sources/${id}/run`)
-  return res.data
+  return await request.post(`/v1/admin/crawl/sources/${id}/run`) as unknown as { task_id: string }
 }
 
 // ---- Task API ----
 
 export async function getTasks(params?: { source_id?: string }, silent = false): Promise<TaskRun[]> {
-  const res = await request.get('/v1/admin/crawl/tasks', { params, silent })
+  const res = await request.get('/v1/admin/crawl/tasks', { params, silent }) as unknown as TaskRun[]
   return res || []
 }
 
 export async function getTask(id: string): Promise<TaskRun> {
-  const res = await request.get(`/v1/admin/crawl/tasks/${id}`)
-  return res.data
+  return await request.get(`/v1/admin/crawl/tasks/${id}`) as unknown as TaskRun
 }
 
 export async function createTask(data: { source_id: string; limit?: number; with_body?: boolean; since?: string; mode?: string }): Promise<{ task_id: string }> {
-  const res = await request.post('/v1/admin/crawl/tasks', data)
-  return res.data
+  return await request.post('/v1/admin/crawl/tasks', data) as unknown as { task_id: string }
 }
 
 // ---- Article API ----
@@ -121,20 +117,19 @@ export async function getArticles(params?: {
   limit?: number
   offset?: number
 }): Promise<{ articles: Article[]; total: number }> {
-  const res = await request.get('/v1/admin/crawl/articles', { params })
-  return res.data || { articles: [], total: 0 }
+  const res = await request.get('/v1/admin/crawl/articles', { params }) as unknown as { articles: Article[]; total: number }
+  return res || { articles: [], total: 0 }
 }
 
 export async function getArticle(id: string): Promise<Article> {
-  const res = await request.get(`/v1/admin/crawl/articles/${id}`)
-  return res.data
+  return await request.get(`/v1/admin/crawl/articles/${id}`) as unknown as Article
 }
 
 // ---- Dashboard API ----
 
 export async function getDashboardStats(silent = false): Promise<DashboardStats | null> {
   try {
-    const res = await request.get('/v1/admin/crawl/dashboard/stats', { silent })
+    const res = await request.get('/v1/admin/crawl/dashboard/stats', { silent }) as unknown as DashboardStats
     return res || null
   } catch {
     return null

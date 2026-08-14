@@ -672,6 +672,8 @@
   "crawlManualHint": "空表示手动触发",
   "crawlSource": "来源",
   "crawlConfirmDelete": "确认删除？",
+  "crawlBasicInfo": "基本信息",
+  "crawlFetchConfig": "抓取配置",
   "crawlFetchDetailFailed": "获取文章详情失败",
   "crawlTitle": "标题",
   "crawlAllSources": "全部数据源",

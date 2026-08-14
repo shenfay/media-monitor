@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Table, Tag, Button, Space, Switch, Modal, Form, Input, InputNumber, Select, Popconfirm, message, Drawer, Descriptions } from 'antd'
+import { Table, Tag, Button, Space, Switch, Form, Input, InputNumber, Select, Popconfirm, message, Drawer, Descriptions, Row, Col, Divider, Typography } from 'antd'
 import { PlusOutlined, ReloadOutlined, PlayCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import { getSources, createSource, updateSource, deleteSource, runSource, type Source } from '@/services/crawl'
@@ -151,30 +151,54 @@ export default function SourceManagement() {
         <Table dataSource={sources} columns={columns} rowKey="id" loading={loading} pagination={false} size="small" />
       </DataPanel>
 
-      <Modal
+      <Drawer
         title={editing ? t('crawlEditSource') : t('crawlCreateSource')}
         open={modalOpen}
-        onOk={handleSubmit}
-        onCancel={() => { setModalOpen(false); form.resetFields() }}
-        width={640}
+        onClose={() => { setModalOpen(false); form.resetFields() }}
+        width={520}
         destroyOnClose
+        extra={
+          <Space>
+            <Button onClick={() => { setModalOpen(false); form.resetFields() }}>{t('cancel')}</Button>
+            <Button type="primary" onClick={handleSubmit}>{t('submit')}</Button>
+          </Space>
+        }
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="name" label={t('name')} rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="platform_type" label={t('crawlPlatform')}>
-            <Select options={[{ value: 'news', label: t('crawlNews') }, { value: 'social', label: t('crawlSocial') }, { value: 'social_overseas', label: t('crawlSocialOverseas') }]} />
-          </Form.Item>
+        <Form form={form} layout="vertical" style={{ marginTop: 4 }}>
+          <Typography.Text strong style={{ fontSize: 13, marginBottom: 12, display: 'block' }}>{t('crawlBasicInfo')}</Typography.Text>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="name" label={t('name')} rules={[{ required: true }]}><Input /></Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="platform_type" label={t('crawlPlatform')}>
+                <Select options={[{ value: 'news', label: t('crawlNews') }, { value: 'social', label: t('crawlSocial') }, { value: 'social_overseas', label: t('crawlSocialOverseas') }]} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="enabled" label={t('crawlEnabled')} valuePropName="checked"><Switch /></Form.Item>
+
+          <Divider style={{ margin: '16px 0 12px' }} />
+          <Typography.Text strong style={{ fontSize: 13, marginBottom: 12, display: 'block' }}>{t('crawlFetchConfig')}</Typography.Text>
           <Form.Item name="base_url" label={t('crawlBaseUrl')}><Input placeholder="https://example.com" /></Form.Item>
           <Form.Item name="list_endpoint" label={t('crawlListEndpoint')}><Input placeholder="/api/list" /></Form.Item>
-          <Form.Item name="nodes" label={t('crawlNodes')}><Select mode="tags" placeholder={t('crawlInputEnter')} /></Form.Item>
-          <Form.Item name="source_filter" label={t('crawlSourceFilter')}><Input placeholder={t('crawlSourceFilter')} /></Form.Item>
-          <Form.Item name="months" label={t('crawlMonths')}><InputNumber min={1} max={120} style={{ width: '100%' }} /></Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="source_filter" label={t('crawlSourceFilter')}><Input placeholder={t('crawlSourceFilter')} /></Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="months" label={t('crawlMonths')}><InputNumber min={1} max={120} style={{ width: '100%' }} /></Form.Item>
+            </Col>
+          </Row>
           <Form.Item name="schedule" label={t('crawlCronSchedule')}><Input placeholder="0 */6 * * *（...）" /></Form.Item>
+
+          <Divider style={{ margin: '16px 0 12px' }} />
+          <Typography.Text strong style={{ fontSize: 13, marginBottom: 12, display: 'block' }}>{t('crawlAuth')}</Typography.Text>
+          <Form.Item name="nodes" label={t('crawlNodes')}><Select mode="tags" placeholder={t('crawlInputEnter')} /></Form.Item>
           <Form.Item name="tags" label={t('crawlCapabilityTags')}><Select mode="tags" placeholder={t('crawlInputEnter')} /></Form.Item>
           <Form.Item name="auth" label={t('crawlAuth')}><TextArea rows={3} placeholder='{"cookie": "..."}' /></Form.Item>
-          <Form.Item name="enabled" label={t('crawlEnabled')} valuePropName="checked"><Switch /></Form.Item>
         </Form>
-      </Modal>
+      </Drawer>
 
       <Drawer title={t('crawlSourceDetail')} open={detailOpen} onClose={() => setDetailOpen(false)} width={480}>
         {detailSource && (

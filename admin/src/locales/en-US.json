@@ -674,6 +674,8 @@
   "crawlManualHint": "Empty for manual trigger",
   "crawlSource": "Source",
   "crawlConfirmDelete": "Confirm delete?",
+  "crawlBasicInfo": "Basic Info",
+  "crawlFetchConfig": "Fetch Config",
   "crawlFetchDetailFailed": "Failed to fetch article detail",
   "crawlTitle": "Title",
   "crawlAllSources": "All Sources",
