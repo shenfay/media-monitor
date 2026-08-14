@@ -57,11 +57,8 @@ func (rl *RateLimiter) allow(ip string) bool {
 	return v.limiter.Allow()
 }
 
-// cleanup 清理长时间未访问的用户
+// cleanup 清理长时间未访问的用户（调用方必须已持有 rl.mu）
 func (rl *RateLimiter) cleanup() {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
 	for ip, v := range rl.visitors {
 		if time.Since(v.lastSeen) > 3*time.Minute {
 			delete(rl.visitors, ip)
