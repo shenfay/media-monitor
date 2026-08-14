@@ -33,7 +33,7 @@ func StartScheduler(redisOpt asynq.RedisClientOpt, svc *Service) *asynq.Schedule
 			payload, _ := json.Marshal(map[string]string{"source_id": src.ID})
 			task := asynq.NewTask(SchedulerTaskType, payload)
 			// 同名已注册会返回错误；忽略之（运行时变更需等待下次 reload 或重启）
-			if err := sched.Register("crawl:"+src.ID, src.Schedule, task); err != nil {
+			if _, err := sched.Register(src.Schedule, task); err != nil {
 				logger.Warn("crawl scheduler: register skipped", "source", src.ID, "err", err)
 			}
 		}
