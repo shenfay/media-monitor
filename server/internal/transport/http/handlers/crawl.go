@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
-	apperrors "github.com/shenfay/go-react-admin/pkg/errors"
 	"github.com/shenfay/go-react-admin/internal/app/crawl"
+	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
 	"github.com/shenfay/go-react-admin/internal/transport/http/response"
+	apperrors "github.com/shenfay/go-react-admin/pkg/errors"
 )
 
 // CrawlHandler 抓取模块 HTTP 处理器

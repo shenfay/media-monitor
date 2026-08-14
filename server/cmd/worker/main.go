@@ -13,11 +13,11 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	crawlapp "github.com/shenfay/go-react-admin/internal/app/crawl"
 	"github.com/shenfay/go-react-admin/internal/infra/config"
 	"github.com/shenfay/go-react-admin/internal/infra/mail"
 	"github.com/shenfay/go-react-admin/internal/infra/messaging"
 	"github.com/shenfay/go-react-admin/internal/infra/repository"
-	crawlapp "github.com/shenfay/go-react-admin/internal/app/crawl"
 	workerhandlers "github.com/shenfay/go-react-admin/internal/transport/worker/handlers"
 	"github.com/shenfay/go-react-admin/pkg/constants"
 	"github.com/shenfay/go-react-admin/pkg/logger"
