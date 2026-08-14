@@ -28,6 +28,7 @@ const MessageManagement = lazy(() => import('@/pages/MessageManagement'))
 const SystemSettings = lazy(() => import('@/pages/SystemSettings'))
 const DesignSystem = lazy(() => import('@/pages/DesignSystem'))
 const WebSocketTest = lazy(() => import('@/pages/WebSocketTest'))
+const WorkerManagement = lazy(() => import('@/pages/WorkerManagement'))
 
 /** 懒加载 fallback 加载指示器 */
 const PageLoading = () => (
@@ -131,6 +132,10 @@ const router = createBrowserRouter([
       {
         path: 'settings',
         element: <PermissionGuard permission="setting:manage"><SystemSettings /></PermissionGuard>,
+      },
+      {
+        path: 'crawl/workers',
+        element: <PermissionGuard permission="worker:view"><WorkerManagement /></PermissionGuard>,
       },
     ],
   },
