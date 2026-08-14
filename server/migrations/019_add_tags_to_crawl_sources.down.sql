@@ -1,0 +1,1 @@
+ALTER TABLE crawl_sources DROP COLUMN IF EXISTS tags;
