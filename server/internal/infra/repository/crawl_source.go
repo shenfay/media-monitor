@@ -23,6 +23,7 @@ type sourcePO struct {
 	Months       int        `gorm:"default:6"`
 	Schedule     string     `gorm:"size:100"`
 	Auth         string     `gorm:"type:text"` // 加密后的 JSON 字符串
+	Tags         string     `gorm:"type:text;default:'[]'"` // JSON 数组字符串
 	Enabled      bool       `gorm:"default:true"`
 	OwnerID      *string    `gorm:"column:owner_id;type:varchar(50)"`
 	LastCrawlAt  *time.Time `gorm:"column:last_crawl_at"`
@@ -53,6 +54,9 @@ func (po *sourcePO) toDomain() *crawl.Source {
 	if po.Nodes != "" {
 		_ = json.Unmarshal([]byte(po.Nodes), &s.Nodes)
 	}
+	if po.Tags != "" {
+		_ = json.Unmarshal([]byte(po.Tags), &s.Tags)
+	}
 	if po.Auth != "" {
 		if dec, err := utils.Decrypt(po.Auth); err == nil {
 			s.Auth = json.RawMessage(dec)
@@ -79,6 +83,11 @@ func sourceFromDomain(s *crawl.Source) *sourcePO {
 	if len(s.Nodes) > 0 {
 		if b, err := json.Marshal(s.Nodes); err == nil {
 			po.Nodes = string(b)
+		}
+	}
+	if len(s.Tags) > 0 {
+		if b, err := json.Marshal(s.Tags); err == nil {
+			po.Tags = string(b)
 		}
 	}
 	if len(s.Auth) > 0 {
@@ -114,6 +123,7 @@ func (r *sourceRepository) Update(ctx context.Context, s *crawl.Source) error {
 		"months":        po.Months,
 		"schedule":      po.Schedule,
 		"auth":          po.Auth,
+		"tags":          po.Tags,
 		"enabled":       po.Enabled,
 		"updated_at":    time.Now(),
 	}).Error

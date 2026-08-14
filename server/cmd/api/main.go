@@ -170,6 +170,7 @@ type handlerDeps struct {
 	notificationHdlr *handlers.NotificationHandler
 	wsHandler        *handlers.WSHandler
 	crawlHdlr        *handlers.CrawlHandler
+	workerHdlr       *handlers.WorkerHandler
 }
 
 // --- Provider 函数 ---
@@ -363,6 +364,7 @@ func initHandlers(svcs *svcDeps, repos *repoDeps, infra *infraDeps) *handlerDeps
 		settingHdlr:      handlers.NewSettingHandler(svcs.settingSvc),
 		notificationHdlr: handlers.NewNotificationHandler(svcs.notificationSvc),
 		crawlHdlr:        handlers.NewCrawlHandler(svcs.crawlSvc),
+		workerHdlr:       handlers.NewWorkerHandler(crawlapp.NewWorkerRegistry(infra.redisClient)),
 	}
 	// WebSocket 处理器（仅在启用时创建）
 	if infra.hub != nil {
@@ -405,6 +407,7 @@ func startServer(deps *startDeps) {
 		NotificationHandler: hdls.notificationHdlr,
 		WSHandler:           hdls.wsHandler,
 		CrawlHandler:        hdls.crawlHdlr,
+		WorkerHandler:       hdls.workerHdlr,
 		TokenManager:        deps.tokenService,
 		Enforcer:            deps.enforcer,
 	})

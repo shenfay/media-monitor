@@ -73,6 +73,7 @@ func (s *Service) CreateSource(ctx context.Context, ownerID string, req CreateSo
 		SourceFilter: req.SourceFilter,
 		Months:       req.Months,
 		Schedule:     req.Schedule,
+		Tags:         req.Tags,
 		Enabled:      req.Enabled,
 		OwnerID:      strPtr(ownerID),
 		CreatedAt:    now,
@@ -84,6 +85,7 @@ func (s *Service) CreateSource(ctx context.Context, ownerID string, req CreateSo
 	if err := s.sources.Create(ctx, src); err != nil {
 		return nil, err
 	}
+	s.notifyConfigChanged(ctx)
 	return src, nil
 }
 
@@ -144,16 +146,24 @@ func (s *Service) UpdateSource(ctx context.Context, id string, req UpdateSourceR
 	if req.Enabled != nil {
 		src.Enabled = *req.Enabled
 	}
+	if req.Tags != nil {
+		src.Tags = req.Tags
+	}
 	src.UpdatedAt = time.Now()
 	if err := s.sources.Update(ctx, src); err != nil {
 		return nil, err
 	}
+	s.notifyConfigChanged(ctx)
 	return src, nil
 }
 
 // DeleteSource 删除数据源
 func (s *Service) DeleteSource(ctx context.Context, id string) error {
-	return s.sources.Delete(ctx, id)
+	if err := s.sources.Delete(ctx, id); err != nil {
+		return err
+	}
+	s.notifyConfigChanged(ctx)
+	return nil
 }
 
 // enqueue 写入 Redis Stream 并创建 TaskRun（状态 queued）
@@ -195,8 +205,11 @@ func (s *Service) enqueue(ctx context.Context, src *crawl.Source, trigger string
 		return "", err
 	}
 
+	// 计算目标 stream（按 tags 路由）
+	stream := ComputeStreamName(s.cfg.Stream, src.Tags)
+
 	if err := s.redis.XAdd(ctx, &redis.XAddArgs{
-		Stream: s.cfg.Stream,
+		Stream: stream,
 		Values: map[string]interface{}{
 			"task_id":   taskID,
 			"source_id": src.ID,
@@ -351,3 +364,8 @@ func computeURLHashForArticle(url string) string {
 }
 
 func strPtr(s string) *string { return &s }
+
+// notifyConfigChanged 发布配置变更通知，Worker 收到后重新计算流列表
+func (s *Service) notifyConfigChanged(ctx context.Context) {
+	_ = s.redis.Publish(ctx, configChannel, `{"action":"source_changed"}`).Err()
+}

@@ -26,6 +26,7 @@ type Source struct {
 	Months       int             `json:"months"`
 	Schedule     string          `json:"schedule"`      // cron 表达式；空表示不自动调度
 	Auth         json.RawMessage `json:"auth"`          // 明文 JSON 对象（社媒登录态/cookie/token）；落库为密文
+	Tags         []string        `json:"tags"`          // 能力标签（如 overseas, youtube），用于 Stream 路由
 	Enabled      bool            `json:"enabled"`
 	OwnerID      *string         `json:"owner_id,omitempty"`
 	LastCrawlAt  *time.Time      `json:"last_crawl_at,omitempty"`

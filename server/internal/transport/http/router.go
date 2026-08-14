@@ -20,6 +20,7 @@ type RouterDeps struct {
 	NotificationHandler *handlers.NotificationHandler
 	WSHandler           *handlers.WSHandler
 	CrawlHandler        *handlers.CrawlHandler
+	WorkerHandler       *handlers.WorkerHandler
 	TokenManager        authentication.TokenManager
 	Enforcer            *authorize.Enforcer
 }
@@ -34,6 +35,7 @@ type Router struct {
 	notificationHandler *handlers.NotificationHandler
 	wsHandler           *handlers.WSHandler
 	crawlHandler        *handlers.CrawlHandler
+	workerHandler       *handlers.WorkerHandler
 	tokenManager        authentication.TokenManager
 	enforcer            *authorize.Enforcer
 	healthHandler       *health.Handler
@@ -50,6 +52,7 @@ func NewRouter(deps *RouterDeps) *Router {
 		notificationHandler: deps.NotificationHandler,
 		wsHandler:           deps.WSHandler,
 		crawlHandler:        deps.CrawlHandler,
+		workerHandler:       deps.WorkerHandler,
 		tokenManager:        deps.TokenManager,
 		enforcer:            deps.Enforcer,
 	}
@@ -247,5 +250,8 @@ func (r *Router) setupCrawlRoutes(v1 *gin.RouterGroup) {
 	admin.Use(authMiddleware, permMiddleware)
 	{
 		r.crawlHandler.RegisterAdminRoutes(admin)
+		if r.workerHandler != nil {
+			r.workerHandler.RegisterRoutes(admin)
+		}
 	}
 }

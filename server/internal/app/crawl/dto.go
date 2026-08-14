@@ -17,6 +17,7 @@ type CreateSourceRequest struct {
 	Months       int             `json:"months"`
 	Schedule     string          `json:"schedule"`
 	Auth         json.RawMessage `json:"auth"`
+	Tags         []string        `json:"tags"`
 	Enabled      bool            `json:"enabled"`
 }
 
@@ -31,6 +32,7 @@ type UpdateSourceRequest struct {
 	Months       int             `json:"months"`
 	Schedule     string          `json:"schedule"`
 	Auth         json.RawMessage `json:"auth"`
+	Tags         []string        `json:"tags"`
 	Enabled      *bool           `json:"enabled"`
 }
 
