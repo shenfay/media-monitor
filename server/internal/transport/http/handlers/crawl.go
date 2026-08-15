@@ -12,6 +12,7 @@ import (
 	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
 	"github.com/shenfay/go-react-admin/internal/transport/http/response"
 	apperrors "github.com/shenfay/go-react-admin/pkg/errors"
+	"github.com/shenfay/go-react-admin/pkg/logger"
 )
 
 // CrawlHandler 抓取模块 HTTP 处理器
@@ -219,6 +220,7 @@ func (h *CrawlHandler) ListArticles(c *gin.Context) {
 	}
 	articles, total, err := h.svc.ListArticles(c.Request.Context(), filter)
 	if err != nil {
+		logger.Error("ListArticles failed", "err", err)
 		response.Error(c, err)
 		return
 	}

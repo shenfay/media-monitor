@@ -634,23 +634,24 @@ func (s *Service) GetUserMenuTree(ctx context.Context, userID string) ([]*rbac.M
 	// 3. 过滤出用户可见的菜单（包含父级菜单）
 	visibleMenus := make([]*rbac.Menu, 0)
 	parentIDs := make(map[string]bool)
+	includedIDs := make(map[string]bool)
 	for _, m := range allMenus {
 		if menuKeySet[m.Key] && m.Status {
 			visibleMenus = append(visibleMenus, m)
+			includedIDs[m.ID] = true
 			if m.ParentID != "" {
 				parentIDs[m.ParentID] = true
 			}
 		}
 	}
-	// 添加父级菜单（分组菜单）
+	// 添加父级菜单（分组菜单），跳过已包含的
 	for _, m := range allMenus {
-		if parentIDs[m.ID] && m.ParentID == "" {
+		if parentIDs[m.ID] && m.ParentID == "" && !includedIDs[m.ID] {
 			visibleMenus = append(visibleMenus, m)
+			includedIDs[m.ID] = true
 		}
 	}
 
 	// 4. 构建树
 	return buildMenuTree(visibleMenus, ""), nil
 }
-
-

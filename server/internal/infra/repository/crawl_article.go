@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -88,13 +89,21 @@ func articleToDomain(po *articlePO) *crawl.Article {
 		SourceName:   po.SourceName,
 		PublishedAt:  po.PublishedAt,
 		Language:     po.Language,
-		Interactions: []byte(po.Interactions),
-		Media:        []byte(po.Media),
+		Interactions: safeJSON(po.Interactions),
+		Media:        safeJSON(po.Media),
 		ThreadID:     po.ThreadID,
-		RawPayload:   []byte(po.RawPayload),
+		RawPayload:   safeJSON(po.RawPayload),
 		FetchedAt:    po.FetchedAt,
 		CreatedAt:    po.CreatedAt,
 	}
+}
+
+// safeJSON 将空字符串转为 nil（避免 json.RawMessage 序列化失败）
+func safeJSON(s string) json.RawMessage {
+	if s == "" {
+		return nil
+	}
+	return json.RawMessage(s)
 }
 
 // computeURLHash 计算 URL 的 MD5 哈希值

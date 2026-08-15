@@ -47,19 +47,19 @@ type CreateTaskRequest struct {
 
 // ArticleInput 单篇文章（来自 Python Stream，字段名与 scrapers/contracts/article.py 对齐）
 type ArticleInput struct {
-	SourceID    string                     `json:"source_id" binding:"required"`
-	Platform    string                     `json:"platform"`
-	Title       string                     `json:"title"`
-	URL         string                     `json:"url" binding:"required"`
-	ExternalID  string                     `json:"external_id"` // 平台侧文章 ID
-	Author      string                     `json:"author"`
-	SourceName  string                     `json:"source_name"`
-	Summary     string                     `json:"summary"`
-	Content     string                     `json:"content"`
-	PublishedAt string                     `json:"published_at"` // ISO 8601
-	Images      []map[string]interface{}   `json:"images"`
-	Extra       map[string]interface{}     `json:"extra"` // 互动指标等
-	FetchedAt   string                     `json:"fetched_at"` // ISO 8601
+	SourceID    string                 `json:"source_id" binding:"required"`
+	Platform    string                 `json:"platform"`
+	Title       string                 `json:"title"`
+	URL         string                 `json:"url" binding:"required"`
+	ExternalID  string                 `json:"external_id"` // 平台侧文章 ID
+	Author      string                 `json:"author"`
+	SourceName  string                 `json:"source_name"`
+	Summary     string                 `json:"summary"`
+	Content     string                 `json:"content"`
+	PublishedAt string                 `json:"published_at"` // ISO 8601
+	Images      []interface{}          `json:"images"`
+	Extra       map[string]interface{} `json:"extra"`      // 互动指标等
+	FetchedAt   string                 `json:"fetched_at"` // ISO 8601
 }
 
 // TaskDispatchMessage 写入 crawl:task:dispatch 的消息体（内嵌 Source 配置）
@@ -72,11 +72,11 @@ type TaskDispatchMessage struct {
 
 // ArticleInestMessage 从 crawl:article:ingest 消费到的消息体
 type ArticleIngestMessage struct {
-	TaskID   string          `json:"task_id"`
-	SourceID string          `json:"source_id"`
-	Phase    string          `json:"phase"` // list | detail
-	BatchSeq int             `json:"batch_seq"`
-	Articles []ArticleInput  `json:"articles"`
+	TaskID   string         `json:"task_id"`
+	SourceID string         `json:"source_id"`
+	Phase    string         `json:"phase"` // list | detail
+	BatchSeq int            `json:"batch_seq"`
+	Articles []ArticleInput `json:"articles"`
 }
 
 // TaskEventMessage 从 crawl:task:event 消费到的消息体

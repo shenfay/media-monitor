@@ -85,4 +85,4 @@ websocket:
 scraper:
   base_url: ""                                   # Python 服务地址（预留，当前 Python 为常驻消费模式，可不填）
   api_key: "change-me-in-production"             # 服务间共享密钥，必须与 Python 侧 MM_SCRAPER_API_KEY 一致
-  stream: "crawl:tasks"                          # Redis Stream 任务队列名，须与 Python 侧 MM_CRAWL_STREAM 一致
+  stream: "crawl:task:dispatch"                    # Redis Stream 任务队列名，须与 Python 侧 MM_DISPATCH_STREAM 一致

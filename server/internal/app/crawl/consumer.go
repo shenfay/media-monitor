@@ -186,8 +186,9 @@ func (s *Service) handleEventMessage(ctx context.Context, msg redis.XMessage) er
 	case "task_done":
 		now := time.Now()
 		failed := event.DetailFailed
-		_ = s.tasks.UpdateStatus(ctx, event.TaskID, event.Status, event.Total, event.ListCount, failed, "")
-		// 更新完成时间（通过 FindByID + 手动更新）
+		if err := s.tasks.UpdateStatus(ctx, event.TaskID, event.Status, event.Total, event.ListCount, failed, ""); err != nil {
+			logger.Error("Failed to update task_done status", "task_id", event.TaskID, "status", event.Status, "err", err)
+		}
 		return s.updateTaskFinished(ctx, event.TaskID, &now)
 
 	case "task_failed":
