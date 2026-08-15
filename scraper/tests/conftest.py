@@ -5,7 +5,7 @@ import pytest
 @pytest.fixture
 def sample_source():
     """构造测试用 Source。"""
-    from scrapers.contracts.source import Source
+    from crawl.contracts.source import Source
     return Source(
         id="test-huanqiu",
         name="环球网",
@@ -18,7 +18,7 @@ def sample_source():
 @pytest.fixture
 def sample_article():
     """构造测试用 Article。"""
-    from scrapers.contracts.article import Article
+    from crawl.contracts.article import Article
     return Article(
         source_id="test-huanqiu",
         platform="news",

@@ -8,8 +8,8 @@ from __future__ import annotations
 import dataclasses
 import json
 
-from scrapers.contracts.article import utc_now_iso
-from scrapers.contracts.source import Source
+from crawl.contracts.article import utc_now_iso
+from crawl.contracts.source import Source
 
 
 @dataclasses.dataclass

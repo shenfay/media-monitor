@@ -14,7 +14,7 @@ ENV MM_REDIS_URL=redis://redis:6379/0
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -m scrapers health || exit 1
+    CMD python -m crawl health || exit 1
 
 # 默认启动常驻消费
-CMD ["python", "-m", "scrapers", "serve"]
+CMD ["python", "-m", "crawl", "serve"]

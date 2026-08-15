@@ -9,8 +9,8 @@ import logging
 
 import redis
 
-from scrapers import config
-from scrapers.contracts.article import Article, ArticleBatch
+from crawl import config
+from crawl.contracts.article import Article, ArticleBatch
 
 logger = logging.getLogger(__name__)
 

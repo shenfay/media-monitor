@@ -31,19 +31,17 @@ def serve(
 ) -> None:
     """常驻消费 Redis Stream，按 task 调对应 adapter，回写数据。"""
     _setup_logging(verbose)
-    logger = logging.getLogger("scrapers.serve")
+    logger = logging.getLogger("crawl.serve")
 
     # 触发适配器自动注册
-    import scrapers.adapters  # noqa: F401
+    import crawl.adapters  # noqa: F401
 
-    from scrapers.core.executor import TaskExecutor
-    from scrapers.core.registry import list_metadata, get_all_required_tags
-    from scrapers.core.worker_registry import WorkerRegistration
-    from scrapers.streams.consumer import MultiStreamConsumer
-    from scrapers.streams.control_listener import ControlListener
-    from scrapers.streams.event_emitter import TaskEventEmitter
-    from scrapers.streams.publisher import ArticlePublisher
-    from scrapers.streams.stream_router import StreamRouter
+    from crawl.adapters.registry import get_all_required_tags, list_metadata
+    from crawl.core.executor import TaskExecutor
+    from crawl.streams.consumer import MultiStreamConsumer
+    from crawl.streams.event_emitter import TaskEventEmitter
+    from crawl.streams.publisher import ArticlePublisher
+    from crawl.worker import ControlListener, StreamRouter, WorkerRegistration
 
     # 收集 adapter 元数据与能力标签
     adapters_meta = list_metadata()
@@ -61,6 +59,8 @@ def serve(
 
     # Stream 路由：计算当前 Worker 需要消费的流
     import redis as redis_lib
+
+    from crawl import config
     redis_conn = redis_lib.Redis.from_url(config.settings.redis_url, decode_responses=True)
     adapter_required_tags = {
         name: meta.get("required_tags", [])
@@ -165,14 +165,14 @@ def run(
 ) -> None:
     """直跑某个 source（本地测试用，不依赖 Redis）。"""
     _setup_logging(verbose)
-    logger = logging.getLogger("scrapers.run")
+    logger = logging.getLogger("crawl.run")
 
-    import scrapers.adapters  # noqa: F401
+    import crawl.adapters  # noqa: F401
 
-    from scrapers.cleaning.normalizer import normalize_article
-    from scrapers.cleaning.validator import validate_article
-    from scrapers.contracts.source import Source
-    from scrapers.core.registry import get_adapter
+    from crawl.cleaning.normalizer import normalize_article
+    from crawl.cleaning.validator import validate_article
+    from crawl.contracts.source import Source
+    from crawl.adapters.registry import get_adapter
 
     adapter = get_adapter(source, source)
     if adapter is None:
@@ -213,8 +213,8 @@ def run(
 @app.command()
 def health() -> None:
     """健康检查（Docker HEALTHCHECK 用）。"""
-    import scrapers.adapters  # noqa: F401
-    from scrapers.core.registry import list_registered
+    import crawl.adapters  # noqa: F401
+    from crawl.adapters.registry import list_registered
 
     registered = list_registered()
     if not registered:

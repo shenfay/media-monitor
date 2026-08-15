@@ -14,7 +14,7 @@ import threading
 
 import redis
 
-from scrapers import config
+from crawl import config
 
 logger = logging.getLogger(__name__)
 

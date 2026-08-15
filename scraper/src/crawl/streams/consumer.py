@@ -15,8 +15,8 @@ from typing import Iterator
 
 import redis
 
-from scrapers import config
-from scrapers.contracts.task_event import CrawlTaskMessage
+from crawl import config
+from crawl.contracts.task_event import CrawlTaskMessage
 
 logger = logging.getLogger(__name__)
 

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from scrapers.contracts.article import Article
-from scrapers.contracts.source import Source
+from crawl.contracts.article import Article
+from crawl.contracts.source import Source
 
 
 class BaseAdapter(ABC):

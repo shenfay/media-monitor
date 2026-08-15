@@ -5,7 +5,7 @@ import hashlib
 import re
 import urllib.parse
 
-from scrapers.contracts.article import Article
+from crawl.contracts.article import Article
 
 
 def normalize_article(article: Article) -> Article:

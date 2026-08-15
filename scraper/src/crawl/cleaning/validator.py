@@ -1,7 +1,7 @@
 """文章校验：返回错误列表（空列表 = 通过）。"""
 from __future__ import annotations
 
-from scrapers.contracts.article import Article
+from crawl.contracts.article import Article
 
 
 def validate_article(article: Article) -> list[str]:

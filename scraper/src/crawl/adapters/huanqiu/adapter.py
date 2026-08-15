@@ -19,10 +19,10 @@ import datetime
 import html
 import re
 
-from scrapers.adapters.base import BaseAdapter
-from scrapers.contracts.article import Article
-from scrapers.contracts.source import Source
-from scrapers.fetchers.http import get_json, get_text_auto
+from crawl.adapters.base import BaseAdapter
+from crawl.contracts.article import Article
+from crawl.contracts.source import Source
+from crawl.fetchers.http import get_json, get_text_auto
 
 RECOMMEND_URL = "https://m.huanqiu.com/api/index/recommend"
 NAV_URL = "https://m.huanqiu.com/api/nav"
@@ -48,6 +48,7 @@ def _within_months(ms, months: int) -> bool:
 class HuanqiuAdapter(BaseAdapter):
     platform_type = "news"
     name = "huanqiu"
+    required_tags = ["huanqiu"]
 
     # ---- 节点发现（保留兼容，新逻辑不再依赖节点）----
     def discover_nodes(self, source: Source) -> list:

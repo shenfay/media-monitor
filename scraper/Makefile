@@ -10,10 +10,10 @@ test:           ## 运行测试
 	pytest tests/ -v
 
 serve:          ## 本地常驻消费
-	python -m scrapers serve
+	python -m crawl serve
 
 run:            ## 本地直跑
-	python -m scrapers run --source huanqiu --limit 50
+	python -m crawl run --source huanqiu --limit 50
 
 build:          ## 构建包
 	python -m build

@@ -9,8 +9,8 @@ import logging
 
 import redis
 
-from scrapers import config
-from scrapers.contracts.task_event import TaskEvent
+from crawl import config
+from crawl.contracts.task_event import TaskEvent
 
 logger = logging.getLogger(__name__)
 

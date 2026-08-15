@@ -12,7 +12,7 @@ import time
 import urllib.error
 import urllib.request
 
-from scrapers.config import settings
+from crawl.config import settings
 
 DEFAULT_USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15"
 

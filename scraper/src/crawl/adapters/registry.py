@@ -10,7 +10,7 @@ import logging
 import pkgutil
 from typing import Type
 
-from scrapers.adapters.base import BaseAdapter
+from crawl.adapters.base import BaseAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,8 @@ def get_adapter(platform_type: str, source_name: str) -> BaseAdapter | None:
 
 
 def auto_discover() -> None:
-    """自动导入 scrapers.adapters 下所有子包，触发其 register() 调用。"""
-    package_name = "scrapers.adapters"
+    """自动导入 crawl.adapters 下所有子包，触发其 register() 调用。"""
+    package_name = "crawl.adapters"
     try:
         package = importlib.import_module(package_name)
     except ImportError:
@@ -42,7 +42,7 @@ def auto_discover() -> None:
         return
 
     for _, module_name, _ in pkgutil.iter_modules(package.__path__):
-        if module_name in ("base",):
+        if module_name in ("base", "registry"):
             continue
         try:
             importlib.import_module(f"{package_name}.{module_name}")
@@ -59,11 +59,12 @@ def list_registered() -> dict[str, str]:
 def list_metadata() -> dict[str, dict]:
     """返回所有已注册适配器的元数据，用于 Worker 注册上报。
 
-    返回格式: {name: {class_name, required_tags, platform_type}}
+    返回格式: {name: {name, class_name, required_tags, platform_type}}
     """
     result = {}
     for name, cls in _REGISTRY.items():
         result[name] = {
+            "name": name,
             "class_name": cls.__name__,
             "required_tags": list(getattr(cls, "required_tags", [])),
             "platform_type": getattr(cls, "platform_type", "news"),

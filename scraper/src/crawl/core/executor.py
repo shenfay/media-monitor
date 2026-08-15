@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import logging
 
-from scrapers.cleaning.normalizer import normalize_article
-from scrapers.cleaning.validator import validate_article
-from scrapers.contracts.article import Article
-from scrapers.contracts.source import Source
-from scrapers.contracts.task_event import CrawlTaskMessage
-from scrapers.core.registry import get_adapter
-from scrapers.streams.event_emitter import TaskEventEmitter
-from scrapers.streams.publisher import ArticlePublisher
+from crawl.cleaning.normalizer import normalize_article
+from crawl.cleaning.validator import validate_article
+from crawl.contracts.article import Article
+from crawl.contracts.source import Source
+from crawl.contracts.task_event import CrawlTaskMessage
+from crawl.adapters.registry import get_adapter
+from crawl.streams.event_emitter import TaskEventEmitter
+from crawl.streams.publisher import ArticlePublisher
 
 logger = logging.getLogger(__name__)
 
