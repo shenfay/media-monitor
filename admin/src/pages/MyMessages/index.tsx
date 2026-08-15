@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, Tag, Select, Button, Badge } from 'antd'
-import { ReloadOutlined, CheckOutlined } from '@ant-design/icons'
+import { CheckOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import { DEFAULT_PAGINATION, getPaginationShowTotal } from '@/config/pagination'
 import { useCrudList } from '@/hooks/useCrudList'
@@ -219,13 +219,6 @@ export default function MyMessages() {
               disabled={unreadTotal === 0}
             >
               {t('markAllRead')}
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchData}
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {t('refresh')}
             </Button>
           </>
         }

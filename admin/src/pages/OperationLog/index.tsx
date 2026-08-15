@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Table, Tag, Select, Button } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
+import { Table, Tag, Select } from 'antd'
 import DataPanel from '@/components/DataPanel'
 import { DEFAULT_PAGINATION, getPaginationShowTotal } from '@/config/pagination'
 import { useCrudList } from '@/hooks/useCrudList'
@@ -164,13 +163,6 @@ export default function OperationLog() {
               style={{ width: 140 }}
               options={categoryOptions}
             />
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchData}
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {t('refresh')}
-            </Button>
           </>
         }
       >

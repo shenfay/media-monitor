@@ -27,13 +27,13 @@ export interface AdapterMeta {
 /** 获取所有 Worker 列表 */
 export async function getWorkers(): Promise<WorkerInfo[]> {
   const res = await request.get('/v1/admin/crawl/workers')
-  return res.data || []
+  return (res as unknown as WorkerInfo[]) || []
 }
 
 /** 获取所有适配器列表 */
 export async function getAdapters(): Promise<AdapterMeta[]> {
   const res = await request.get('/v1/admin/crawl/workers/adapters')
-  return res.data || []
+  return (res as unknown as AdapterMeta[]) || []
 }
 
 /** 暂停 Worker */

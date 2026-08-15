@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, Tag, Button, Space, Switch, Form, Input, InputNumber, Select, Popconfirm, message, Drawer, Descriptions, Row, Col, Divider, Typography } from 'antd'
-import { PlusOutlined, ReloadOutlined, PlayCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { PlusOutlined, PlayCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import { getSources, createSource, updateSource, deleteSource, runSource, type Source } from '@/services/crawl'
 
@@ -143,9 +143,6 @@ export default function SourceManagement() {
         title={t('crawlSourceMgmt')}
         extra={
           <Button icon={<PlusOutlined />} type="primary" onClick={handleAdd}>{t('crawlCreateSource')}</Button>
-        }
-        toolbarActions={
-          <Button icon={<ReloadOutlined />} onClick={fetchData}>{t('refresh')}</Button>
         }
       >
         <Table dataSource={sources} columns={columns} rowKey="id" loading={loading} pagination={false} size="small" />

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, Tag, Button, Select, Input, message, Drawer, Descriptions, Typography } from 'antd'
-import { ReloadOutlined, EyeOutlined } from '@ant-design/icons'
+import { EyeOutlined } from '@ant-design/icons'
 import DataPanel, { FilterSearch } from '@/components/DataPanel'
 import { getArticles, getArticle, getSources, type Article, type Source } from '@/services/crawl'
 
@@ -87,6 +87,10 @@ export default function ArticleManagement() {
       ),
     },
     {
+      title: t('crawlDataSource'), dataIndex: 'source_id', key: 'data_source', width: 150, ellipsis: true,
+      render: (_: string, record: Article) => sourceMap[record.source_id] || record.source_name || '-',
+    },
+    {
       title: t('crawlSource'), dataIndex: 'source_id', key: 'source_id', width: 120, ellipsis: true,
       render: (v: string, record: Article) => record.source_name || sourceMap[v] || v?.slice(0, 8) || '-',
     },
@@ -96,10 +100,10 @@ export default function ArticleManagement() {
     { title: t('crawlPublishTime'), dataIndex: 'published_at', key: 'published_at', width: 150, render: (v: string | null) => formatTime(v) },
     { title: t('crawlFetchedAt'), dataIndex: 'fetched_at', key: 'fetched_at', width: 150, render: (v: string) => formatTime(v) },
     {
-      title: t('actions'), key: 'actions', width: 80,
+      title: t('actions'), key: 'actions', width: 110,
       render: (_: unknown, record: Article) => (
-        <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
-          {t('crawlViewDetail')}
+        <Button type="link" size="small" onClick={() => handleViewDetail(record.id)}>
+          <EyeOutlined style={{ marginRight: 4 }} />{t('crawlView')}
         </Button>
       ),
     },
@@ -128,9 +132,6 @@ export default function ArticleManagement() {
               ]}
             />
             </>
-        }
-        toolbarActions={
-          <Button icon={<ReloadOutlined />} onClick={() => { setPage(1); fetchData() }}>{t('refresh')}</Button>
         }
       >
         <Table

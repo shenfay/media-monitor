@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, Tag, Button, Space, Popconfirm, message, Card, Row, Col, Tooltip, Badge } from 'antd'
-import { ReloadOutlined, PauseCircleOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons'
+import { PauseCircleOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import {
   getWorkers,
@@ -216,15 +216,6 @@ export default function WorkerManagement() {
     <div>
       <DataPanel
         title={t('workerMgmt')}
-        toolbarActions={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchData}
-            loading={loading}
-          >
-            {t('refresh')}
-          </Button>
-        }
       >
         <Table
           dataSource={workers}

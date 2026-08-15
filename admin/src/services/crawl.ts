@@ -51,6 +51,7 @@ export interface Article {
   body_format: string
   author: string
   source_name: string
+  channel: string
   language: string
   published_at: string | null
   media: unknown

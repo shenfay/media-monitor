@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Table, Tag, Button, Space, Select, Modal, Form, InputNumber, Switch, message, Tooltip, Drawer, Descriptions } from 'antd'
-import { ReloadOutlined, PlusOutlined } from '@ant-design/icons'
+import { PlusOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import { getTasks, getSources, createTask, type TaskRun, type Source } from '@/services/crawl'
 
@@ -104,7 +104,7 @@ export default function TaskManagement() {
       <DataPanel
         title={t('crawlTaskMgmt')}
         extra={
-          <Button icon={<PlusOutlined />} onClick={() => { form.resetFields(); setCreateOpen(true) }}>{t('crawlManualCreate')}</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setCreateOpen(true) }}>{t('crawlManualCreate')}</Button>
         }
         filters={
           <>
@@ -122,9 +122,6 @@ export default function TaskManagement() {
               ]}
             />
           </>
-        }
-        toolbarActions={
-          <Button icon={<ReloadOutlined />} onClick={fetchData}>{t('refresh')}</Button>
         }
       >
         <Table
