@@ -23,31 +23,26 @@ func (s *Service) GetDashboardStats(ctx context.Context) (*DashboardStats, error
 	stats := &DashboardStats{}
 
 	// 数据源统计
-	var totalSources, enabledSources int64
-	s.db.WithContext(ctx).Table("crawl_sources").Count(&totalSources)
-	s.db.WithContext(ctx).Table("crawl_sources").Where("enabled = ?", true).Count(&enabledSources)
-	stats.TotalSources = int(totalSources)
-	stats.EnabledSources = int(enabledSources)
+	totalSources, _ := s.sources.CountAll(ctx)
+	enabledSources, _ := s.sources.CountEnabled(ctx)
+	stats.TotalSources = totalSources
+	stats.EnabledSources = enabledSources
 
 	// 文章统计
-	var totalArticles int64
-	s.db.WithContext(ctx).Table("crawl_articles").Count(&totalArticles)
-	stats.TotalArticles = int(totalArticles)
+	totalArticles, _ := s.articles.CountAll(ctx)
+	stats.TotalArticles = totalArticles
 
 	// 今日文章
 	today := time.Now().Truncate(24 * time.Hour)
-	var todayArticles int64
-	s.db.WithContext(ctx).Table("crawl_articles").Where("created_at >= ?", today).Count(&todayArticles)
-	stats.TodayArticles = int(todayArticles)
+	todayArticles, _ := s.articles.CountSince(ctx, today)
+	stats.TodayArticles = todayArticles
 
 	// 任务统计
-	var totalTasks int64
-	s.db.WithContext(ctx).Table("crawl_task_runs").Count(&totalTasks)
-	stats.TotalTasks = int(totalTasks)
+	totalTasks, _ := s.tasks.CountAll(ctx)
+	stats.TotalTasks = totalTasks
 
-	var runningTasks int64
-	s.db.WithContext(ctx).Table("crawl_task_runs").Where("status IN ?", []string{"queued", "running"}).Count(&runningTasks)
-	stats.RunningTasks = int(runningTasks)
+	runningTasks, _ := s.tasks.CountByStatus(ctx, "queued", "running")
+	stats.RunningTasks = runningTasks
 
 	// 在线 Worker（从 Redis 读取）
 	ids, err := s.redis.SMembers(ctx, workerIDsKey).Result()

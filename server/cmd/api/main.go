@@ -349,7 +349,6 @@ func initServices(cfg *config.Config, infra *infraDeps, repos *repoDeps, m *metr
 			repos.crawlSourceRepo,
 			repos.crawlArticleRepo,
 			repos.crawlTaskRepo,
-			infra.db,
 			infra.redisClient,
 			cfg.Scraper,
 		),

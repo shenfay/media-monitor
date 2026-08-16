@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/shenfay/go-react-admin/internal/app/crawl"
 	crawldomain "github.com/shenfay/go-react-admin/internal/domain/crawl"
@@ -92,7 +91,7 @@ func (h *CrawlHandler) UpdateSource(c *gin.Context) {
 	}
 	src, err := h.svc.UpdateSource(c.Request.Context(), id, req)
 	if err != nil {
-		if errors.Is(err, crawl.ErrSourceNotFound) || errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, crawldomain.ErrSourceNotFound) {
 			response.Error(c, apperrors.NewAppError("CRAWL.NOT_FOUND", "数据源不存在", http.StatusNotFound).WithError(err))
 			return
 		}
@@ -215,6 +214,7 @@ func (h *CrawlHandler) ListArticles(c *gin.Context) {
 		Platform: c.Query("platform"),
 		Language: c.Query("language"),
 		Keyword:  c.Query("keyword"),
+		Status:   c.Query("status"),
 		Limit:    limit,
 		Offset:   offset,
 	}
@@ -235,7 +235,7 @@ func (h *CrawlHandler) GetArticle(c *gin.Context) {
 	id := c.Param("id")
 	article, err := h.svc.GetArticle(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, crawldomain.ErrArticleNotFound) {
 			response.Error(c, apperrors.NewAppError("CRAWL.NOT_FOUND", "文章不存在", http.StatusNotFound).WithError(err))
 			return
 		}

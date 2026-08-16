@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -89,9 +90,23 @@ func (r *taskRunRepository) UpdateStatus(ctx context.Context, id string, status 
 	}).Error
 }
 
+func (r *taskRunRepository) UpdateTimestamps(ctx context.Context, id string, startedAt, finishedAt *time.Time) error {
+	updates := map[string]interface{}{"updated_at": time.Now()}
+	if startedAt != nil {
+		updates["started_at"] = startedAt
+	}
+	if finishedAt != nil {
+		updates["finished_at"] = finishedAt
+	}
+	return r.db.WithContext(ctx).Model(&taskRunPO{}).Where("id = ?", id).Updates(updates).Error
+}
+
 func (r *taskRunRepository) FindByID(ctx context.Context, id string) (*crawl.TaskRun, error) {
 	var po taskRunPO
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&po).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, crawl.ErrTaskNotFound
+		}
 		return nil, err
 	}
 	return po.toDomain(), nil
@@ -123,4 +138,20 @@ func (r *taskRunRepository) HasActiveTask(ctx context.Context, sourceID string) 
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *taskRunRepository) CountAll(ctx context.Context) (int, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&taskRunPO{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (r *taskRunRepository) CountByStatus(ctx context.Context, statuses ...string) (int, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&taskRunPO{}).Where("status IN ?", statuses).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

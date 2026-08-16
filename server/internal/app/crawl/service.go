@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 
 	"github.com/shenfay/go-react-admin/internal/domain/crawl"
 	"github.com/shenfay/go-react-admin/internal/infra/config"
@@ -32,12 +31,12 @@ type ScrapeParams struct {
 	Mode     string `json:"mode,omitempty"`
 }
 
-// 领域错误
+// 领域错误（已迁移至 domain/crawl/errors.go，此处保留别名以兼容 Handler 引用）
 var (
-	ErrSourceNotFound  = errors.New("crawl: source not found")
-	ErrSourceDisabled  = errors.New("crawl: source disabled")
-	ErrTaskNotFound    = errors.New("crawl: task not found")
-	ErrTaskAlreadyRun  = errors.New("crawl: task already running for this source")
+	ErrSourceNotFound = crawl.ErrSourceNotFound
+	ErrSourceDisabled = errors.New("crawl: source disabled")
+	ErrTaskNotFound   = crawl.ErrTaskNotFound
+	ErrTaskAlreadyRun = errors.New("crawl: task already running for this source")
 )
 
 // Service 抓取应用服务
@@ -45,7 +44,6 @@ type Service struct {
 	sources  crawl.SourceRepository
 	articles crawl.ArticleRepository
 	tasks    crawl.TaskRunRepository
-	db       *gorm.DB
 	redis    *redis.Client
 	cfg      config.ScraperConfig
 }
@@ -55,11 +53,10 @@ func NewService(
 	sources crawl.SourceRepository,
 	articles crawl.ArticleRepository,
 	tasks crawl.TaskRunRepository,
-	db *gorm.DB,
 	rdb *redis.Client,
 	cfg config.ScraperConfig,
 ) *Service {
-	return &Service{sources: sources, articles: articles, tasks: tasks, db: db, redis: rdb, cfg: cfg}
+	return &Service{sources: sources, articles: articles, tasks: tasks, redis: rdb, cfg: cfg}
 }
 
 // CreateSource 创建数据源（auth 由仓储层加密）
@@ -100,9 +97,6 @@ func (s *Service) ListSources(ctx context.Context, enabledOnly bool) ([]*crawl.S
 func (s *Service) GetSource(ctx context.Context, id string) (*crawl.Source, error) {
 	src, err := s.sources.FindByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSourceNotFound
-		}
 		return nil, err
 	}
 	return src, nil
@@ -112,9 +106,6 @@ func (s *Service) GetSource(ctx context.Context, id string) (*crawl.Source, erro
 func (s *Service) UpdateSource(ctx context.Context, id string, req UpdateSourceRequest) (*crawl.Source, error) {
 	src, err := s.sources.FindByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrSourceNotFound
-		}
 		return nil, err
 	}
 	if req.Name != "" {
@@ -227,9 +218,6 @@ func (s *Service) enqueue(ctx context.Context, src *crawl.Source, trigger string
 func (s *Service) EnqueueForSource(ctx context.Context, sourceID, trigger string) (string, error) {
 	src, err := s.sources.FindByID(ctx, sourceID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ErrSourceNotFound
-		}
 		return "", err
 	}
 	if !src.Enabled {
@@ -246,9 +234,6 @@ func (s *Service) EnqueueForSource(ctx context.Context, sourceID, trigger string
 func (s *Service) CreateTask(ctx context.Context, req CreateTaskRequest) (string, error) {
 	src, err := s.sources.FindByID(ctx, req.SourceID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ErrSourceNotFound
-		}
 		return "", err
 	}
 	params := ScrapeParams{Limit: req.Limit, WithBody: req.WithBody, Mode: req.Mode}
@@ -282,9 +267,6 @@ func (s *Service) UpdateLastCrawlAt(ctx context.Context, sourceID string, t time
 func (s *Service) GetTask(ctx context.Context, id string) (*crawl.TaskRun, error) {
 	t, err := s.tasks.FindByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrTaskNotFound
-		}
 		return nil, err
 	}
 	return t, nil
@@ -298,6 +280,11 @@ func (s *Service) ListTasks(ctx context.Context, sourceID string) ([]*crawl.Task
 // mapArticleInput 将 Python 回写字段映射为领域 Article
 func mapArticleInput(in ArticleInput) (*crawl.Article, error) {
 	now := time.Now()
+	// 抓取状态：有正文则为 completed，否则 pending
+	status := "pending"
+	if in.Content != "" {
+		status = "completed"
+	}
 	a := &crawl.Article{
 		ID:         utils.GenerateID(),
 		SourceID:   in.SourceID,
@@ -310,6 +297,7 @@ func mapArticleInput(in ArticleInput) (*crawl.Article, error) {
 		Author:     in.Author,
 		SourceName: in.SourceName,
 		Language:   "",
+		Status:     status,
 		CreatedAt:  now,
 		FetchedAt:  now,
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,29 +16,30 @@ import (
 
 // articlePO 文章持久化对象
 type articlePO struct {
-	ID           string     `gorm:"primaryKey;type:varchar(26)"`
-	SourceID     string     `gorm:"column:source_id;type:varchar(26);index"`
-	Platform     string     `gorm:"size:50"`
-	ExternalID   string     `gorm:"column:external_id;size:100;index"`
-	URL          string     `gorm:"column:url;type:text"`
-	URLHash      string     `gorm:"column:url_hash;size:64"`
-	Title        string     `gorm:"size:512"`
+	ID           string `gorm:"primaryKey;type:varchar(26)"`
+	SourceID     string `gorm:"column:source_id;type:varchar(26);index"`
+	Platform     string `gorm:"size:50"`
+	ExternalID   string `gorm:"column:external_id;size:100;index"`
+	URL          string `gorm:"column:url;type:text"`
+	URLHash      string `gorm:"column:url_hash;size:64"`
+	Title        string `gorm:"size:512"`
 	Subtitle     *string
-	Summary      string `gorm:"type:text"`
-	Body         string `gorm:"type:text"`
-	BodyFormat   string `gorm:"column:body_format;size:20"`
-	Channel      string `gorm:"size:100"`
-	Author       string `gorm:"size:200"`
-	SourceName   string `gorm:"column:source_name;size:200"`
+	Summary      string     `gorm:"type:text"`
+	Body         string     `gorm:"type:text"`
+	BodyFormat   string     `gorm:"column:body_format;size:20"`
+	Channel      string     `gorm:"size:100"`
+	Author       string     `gorm:"size:200"`
+	SourceName   string     `gorm:"column:source_name;size:200"`
 	PublishedAt  *time.Time `gorm:"column:published_at"`
-	Language     string `gorm:"size:20"`
-	Interactions string `gorm:"type:text"`
-	Media        string `gorm:"type:text"`
-	ThreadID     *string `gorm:"column:thread_id;type:varchar(100)"`
-	RawPayload   string `gorm:"column:raw_payload;type:text"`
-	FetchedAt    time.Time `gorm:"column:fetched_at"`
-	CreatedAt    time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
-	UpdatedAt    time.Time `gorm:"not null;default:CURRENT_TIMESTAMP"`
+	Language     string     `gorm:"size:20"`
+	Status       string     `gorm:"size:20;default:'pending'"`
+	Interactions string     `gorm:"type:text"`
+	Media        string     `gorm:"type:text"`
+	ThreadID     *string    `gorm:"column:thread_id;type:varchar(100)"`
+	RawPayload   string     `gorm:"column:raw_payload;type:text"`
+	FetchedAt    time.Time  `gorm:"column:fetched_at"`
+	CreatedAt    time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP"`
+	UpdatedAt    time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP"`
 }
 
 // TableName 指定表名
@@ -61,6 +63,7 @@ func articleFromDomain(a *crawl.Article) *articlePO {
 		SourceName:   a.SourceName,
 		PublishedAt:  a.PublishedAt,
 		Language:     a.Language,
+		Status:       a.Status,
 		Interactions: string(a.Interactions),
 		Media:        string(a.Media),
 		ThreadID:     a.ThreadID,
@@ -89,6 +92,7 @@ func articleToDomain(po *articlePO) *crawl.Article {
 		SourceName:   po.SourceName,
 		PublishedAt:  po.PublishedAt,
 		Language:     po.Language,
+		Status:       po.Status,
 		Interactions: safeJSON(po.Interactions),
 		Media:        safeJSON(po.Media),
 		ThreadID:     po.ThreadID,
@@ -136,7 +140,7 @@ func (r *articleRepository) UpsertBatch(ctx context.Context, articles []*crawl.A
 				DoUpdates: clause.AssignmentColumns([]string{
 					"title", "subtitle", "summary", "body", "body_format",
 					"channel", "author", "source_name", "published_at", "language",
-					"interactions", "media", "thread_id", "raw_payload", "fetched_at", "updated_at",
+					"status", "interactions", "media", "thread_id", "raw_payload", "fetched_at", "updated_at",
 				}),
 			}).Create(&po).Error; err != nil {
 				return err
@@ -165,6 +169,9 @@ func (r *articleRepository) List(ctx context.Context, filter crawl.ArticleFilter
 	if filter.Keyword != "" {
 		query = query.Where("title ILIKE ?", "%"+filter.Keyword+"%")
 	}
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -192,7 +199,26 @@ func (r *articleRepository) List(ctx context.Context, filter crawl.ArticleFilter
 func (r *articleRepository) FindByID(ctx context.Context, id string) (*crawl.Article, error) {
 	var po articlePO
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&po).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, crawl.ErrArticleNotFound
+		}
 		return nil, err
 	}
 	return articleToDomain(&po), nil
+}
+
+func (r *articleRepository) CountAll(ctx context.Context) (int, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&articlePO{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (r *articleRepository) CountSince(ctx context.Context, since time.Time) (int, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&articlePO{}).Where("created_at >= ?", since).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

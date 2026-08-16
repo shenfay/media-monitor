@@ -31,6 +31,31 @@ func NewAuthHandler(service *authentication.Service, emailVerifySvc *emailverifi
 	}
 }
 
+// RegisterPublicRoutes 注册公开认证路由（无需 JWT）
+// 注意：/login 路由由 router.go 注册以附加限流中间件
+func (h *AuthHandler) RegisterPublicRoutes(rg *gin.RouterGroup) {
+	rg.POST("/register", h.Register)
+	rg.POST("/logout", h.Logout)
+	rg.POST("/refresh", h.RefreshToken)
+	rg.GET("/verify-email", h.VerifyEmail)
+	rg.POST("/forgot-password", h.ForgotPassword)
+	rg.POST("/reset-password", h.ResetPassword)
+}
+
+// RegisterAuthRoutes 注册需 JWT 认证的认证路由
+func (h *AuthHandler) RegisterAuthRoutes(rg *gin.RouterGroup) {
+	rg.GET("/me", h.GetCurrentUser)
+	rg.GET("/devices", h.GetUserDevices)
+	rg.DELETE("/devices/:token", h.RevokeDevice)
+	rg.POST("/logout-all", h.LogoutAllDevices)
+	rg.POST("/resend-verification", h.ResendVerification)
+}
+
+// RegisterUserRoutes 注册用户查询路由（需 JWT 认证）
+func (h *AuthHandler) RegisterUserRoutes(rg *gin.RouterGroup) {
+	rg.GET("/:id", h.GetUserByID)
+}
+
 // RegisterRequest 用户注册请求
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email,max=255"`   // 用户邮箱

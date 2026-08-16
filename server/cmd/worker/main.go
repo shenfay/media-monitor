@@ -76,7 +76,7 @@ func main() {
 	crawlSourceRepo := repository.NewCrawlSourceRepository(db)
 	crawlArticleRepo := repository.NewCrawlArticleRepository(db)
 	crawlTaskRepo := repository.NewCrawlTaskRunRepository(db)
-	crawlSvc := crawlapp.NewService(crawlSourceRepo, crawlArticleRepo, crawlTaskRepo, db, redisClient, cfg.Scraper)
+	crawlSvc := crawlapp.NewService(crawlSourceRepo, crawlArticleRepo, crawlTaskRepo, redisClient, cfg.Scraper)
 
 	// 5. 创建处理器
 	operationLogHandler := workerhandlers.NewOperationLogHandler(operationLogRepo)

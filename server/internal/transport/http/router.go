@@ -105,31 +105,18 @@ func (r *Router) Setup() {
 
 // setupAuthRoutes 配置认证相关路由
 func (r *Router) setupAuthRoutes(v1 *gin.RouterGroup) {
-	auth := v1.Group("/auth")
-	{
-		// 公开路由
-		auth.POST("/register", r.authHandler.Register)
-		auth.POST("/login", middleware.LoginRateLimit(), r.authHandler.Login)
-		auth.POST("/logout", r.authHandler.Logout)
-		auth.POST("/refresh", r.authHandler.RefreshToken)
+	// 公开路由
+	authPublic := v1.Group("/auth")
+	r.authHandler.RegisterPublicRoutes(authPublic)
+	// 登录路由单独加限流中间件
+	authPublic.POST("/login", middleware.LoginRateLimit(), r.authHandler.Login)
 
-		// 邮箱验证（公开）
-		auth.GET("/verify-email", r.authHandler.VerifyEmail)
-
-		// 密码重置（公开）
-		auth.POST("/forgot-password", r.authHandler.ForgotPassword)
-		auth.POST("/reset-password", r.authHandler.ResetPassword)
-
-		// 需要认证的路由
-		authMiddleware := middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
-			TokenService: r.tokenManager,
-		})
-		auth.GET("/me", authMiddleware, r.authHandler.GetCurrentUser)
-		auth.GET("/devices", authMiddleware, r.authHandler.GetUserDevices)
-		auth.DELETE("/devices/:token", authMiddleware, r.authHandler.RevokeDevice)
-		auth.POST("/logout-all", authMiddleware, r.authHandler.LogoutAllDevices)
-		auth.POST("/resend-verification", authMiddleware, r.authHandler.ResendVerification)
-	}
+	// 需要认证的路由
+	authJWT := v1.Group("/auth")
+	authJWT.Use(middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
+		TokenService: r.tokenManager,
+	}))
+	r.authHandler.RegisterAuthRoutes(authJWT)
 }
 
 // setupUserRoutes 配置用户相关路由
@@ -138,9 +125,7 @@ func (r *Router) setupUserRoutes(v1 *gin.RouterGroup) {
 	users.Use(middleware.JWTAuthMiddleware(middleware.JWTAuthConfig{
 		TokenService: r.tokenManager,
 	}))
-	{
-		users.GET("/:id", r.authHandler.GetUserByID)
-	}
+	r.authHandler.RegisterUserRoutes(users)
 }
 
 // setupAdminRoutes 配置管理员路由组
@@ -152,40 +137,12 @@ func (r *Router) setupAdminRoutes(v1 *gin.RouterGroup) {
 
 	adminGroup := v1.Group("/admin")
 	adminGroup.Use(authMiddleware, permMiddleware)
-	{
-		// 用户管理
-		adminGroup.GET("/users", r.adminHandler.ListUsers)
-		adminGroup.POST("/users", r.adminHandler.CreateUser)
-		adminGroup.PUT("/users/:id", r.adminHandler.UpdateUser)
-		adminGroup.PATCH("/users/:id/status", r.adminHandler.ToggleUserStatus)
+	r.adminHandler.RegisterRoutes(adminGroup)
 
-		// 角色管理
-		adminGroup.GET("/roles", r.adminHandler.ListRoles)
-		adminGroup.POST("/roles", r.adminHandler.CreateRole)
-		adminGroup.PUT("/roles/:id", r.adminHandler.UpdateRole)
-		adminGroup.DELETE("/roles/:id", r.adminHandler.DeleteRole)
-		adminGroup.PATCH("/roles/:id/status", r.adminHandler.ToggleRoleStatus)
-
-		// 权限管理
-		adminGroup.GET("/roles/:id/permissions", r.adminHandler.GetRolePermissions)
-		adminGroup.PUT("/roles/:id/permissions", r.adminHandler.UpdateRolePermissions)
-
-		// 菜单管理
-		adminGroup.GET("/menus", r.adminHandler.ListMenus)
-		adminGroup.POST("/menus", r.adminHandler.CreateMenu)
-		adminGroup.PUT("/menus/:id", r.adminHandler.UpdateMenu)
-		adminGroup.DELETE("/menus/:id", r.adminHandler.DeleteMenu)
-		adminGroup.PATCH("/menus/:id/status", r.adminHandler.ToggleMenuStatus)
-		adminGroup.PUT("/menus/sort", r.adminHandler.UpdateMenuSort)
-	}
-
-	// 当前用户权限和菜单（放在 auth 组下，只需登录即可）
+	// 当前用户权限与菜单（只需登录）
 	auth := v1.Group("/auth")
 	auth.Use(authMiddleware)
-	{
-		auth.GET("/permissions", r.adminHandler.GetCurrentUserPermissions)
-		auth.GET("/menus", r.adminHandler.GetUserMenuTree)
-	}
+	r.adminHandler.RegisterUserMenuRoutes(auth)
 }
 
 // setupOperationLogRoutes 配置操作日志路由（需要认证 + 管理员权限）

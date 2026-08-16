@@ -70,7 +70,7 @@ type TaskDispatchMessage struct {
 	Params   ScrapeParams  `json:"params"`
 }
 
-// ArticleInestMessage 从 crawl:article:ingest 消费到的消息体
+// ArticleIngestMessage 从 crawl:article:ingest 消费到的消息体
 type ArticleIngestMessage struct {
 	TaskID   string         `json:"task_id"`
 	SourceID string         `json:"source_id"`

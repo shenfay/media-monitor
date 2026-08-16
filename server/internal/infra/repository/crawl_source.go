@@ -3,11 +3,13 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
 
 	"github.com/shenfay/go-react-admin/internal/domain/crawl"
+	"github.com/shenfay/go-react-admin/pkg/logger"
 	"github.com/shenfay/go-react-admin/pkg/utils"
 )
 
@@ -22,7 +24,7 @@ type sourcePO struct {
 	SourceFilter string     `gorm:"column:source_filter;size:200"`
 	Months       int        `gorm:"default:6"`
 	Schedule     string     `gorm:"size:100"`
-	Auth         string     `gorm:"type:text"` // 加密后的 JSON 字符串
+	Auth         string     `gorm:"type:text"`              // 加密后的 JSON 字符串
 	Tags         string     `gorm:"type:text;default:'[]'"` // JSON 数组字符串
 	Enabled      bool       `gorm:"default:true"`
 	OwnerID      *string    `gorm:"column:owner_id;type:varchar(50)"`
@@ -136,6 +138,9 @@ func (r *sourceRepository) Delete(ctx context.Context, id string) error {
 func (r *sourceRepository) FindByID(ctx context.Context, id string) (*crawl.Source, error) {
 	var po sourcePO
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&po).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, crawl.ErrSourceNotFound
+		}
 		return nil, err
 	}
 	return po.toDomain(), nil
@@ -150,9 +155,36 @@ func (r *sourceRepository) List(ctx context.Context, enabledOnly bool) ([]*crawl
 	if err := q.Find(&pos).Error; err != nil {
 		return nil, err
 	}
+
+	// 批量查询每个数据源的文章数
+	type sourceCount struct {
+		SourceID string `gorm:"column:source_id"`
+		Count    int    `gorm:"column:cnt"`
+	}
+	var counts []sourceCount
+	if len(pos) > 0 {
+		ids := make([]string, len(pos))
+		for i, po := range pos {
+			ids[i] = po.ID
+		}
+		if err := r.db.WithContext(ctx).Model(&articlePO{}).
+			Select("source_id, COUNT(*) as cnt").
+			Where("source_id IN ?", ids).
+			Group("source_id").
+			Scan(&counts).Error; err != nil {
+			logger.Warn("failed to count articles per source", "err", err)
+		}
+	}
+	countMap := make(map[string]int, len(counts))
+	for _, c := range counts {
+		countMap[c.SourceID] = c.Count
+	}
+
 	out := make([]*crawl.Source, 0, len(pos))
 	for i := range pos {
-		out = append(out, pos[i].toDomain())
+		s := pos[i].toDomain()
+		s.ArticleCount = countMap[pos[i].ID]
+		out = append(out, s)
 	}
 	return out, nil
 }
@@ -161,4 +193,20 @@ func (r *sourceRepository) List(ctx context.Context, enabledOnly bool) ([]*crawl
 func (r *sourceRepository) UpdateLastCrawlAt(ctx context.Context, id string, t time.Time) error {
 	return r.db.WithContext(ctx).Model(&sourcePO{}).Where("id = ?", id).
 		Update("last_crawl_at", t).Error
+}
+
+func (r *sourceRepository) CountAll(ctx context.Context) (int, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&sourcePO{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (r *sourceRepository) CountEnabled(ctx context.Context) (int, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&sourcePO{}).Where("enabled = ?", true).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

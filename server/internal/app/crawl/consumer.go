@@ -31,69 +31,32 @@ const (
 // StartArticleConsumer 消费 crawl:article:ingest，批量写入 PG
 func (s *Service) StartArticleConsumer(ctx context.Context) {
 	stream := s.cfg.ArticleStream
-	rdb := s.redis
-
-	ensureGroup(rdb, stream, articleConsumerGroup)
+	ensureGroup(s.redis, stream, articleConsumerGroup)
 	logger.Info("Article consumer started", "stream", stream)
-
-	for {
-		select {
-		case <-ctx.Done():
-			logger.Info("Article consumer shutting down")
-			return
-		default:
-		}
-
-		results, err := rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
-			Group:    articleConsumerGroup,
-			Consumer: consumerName,
-			Streams:  []string{stream, ">"},
-			Count:    streamBatchSize,
-			Block:    time.Duration(streamBlockMs) * time.Millisecond,
-		}).Result()
-
-		if err != nil {
-			if err == redis.Nil {
-				continue
-			}
-			if isContextDone(err) {
-				return
-			}
-			logger.Error("Article consumer read error", "err", err)
-			time.Sleep(time.Second)
-			continue
-		}
-
-		for _, xr := range results {
-			for _, msg := range xr.Messages {
-				if err := s.handleArticleMessage(ctx, msg); err != nil {
-					logger.Error("Article message handle error", "msg_id", msg.ID, "err", err)
-					continue // 不 XACK，等待重试
-				}
-				rdb.XAck(ctx, stream, articleConsumerGroup, msg.ID)
-			}
-		}
-	}
+	s.runConsumerLoop(ctx, stream, articleConsumerGroup, s.handleArticleMessage, "Article")
 }
 
 // StartEventConsumer 消费 crawl:task:event，更新 TaskRun 状态
 func (s *Service) StartEventConsumer(ctx context.Context) {
 	stream := s.cfg.EventStream
-	rdb := s.redis
-
-	ensureGroup(rdb, stream, eventConsumerGroup)
+	ensureGroup(s.redis, stream, eventConsumerGroup)
 	logger.Info("Event consumer started", "stream", stream)
+	s.runConsumerLoop(ctx, stream, eventConsumerGroup, s.handleEventMessage, "Event")
+}
 
+// runConsumerLoop 通用 Stream 消费循环
+func (s *Service) runConsumerLoop(ctx context.Context, stream, group string, handler func(context.Context, redis.XMessage) error, label string) {
+	rdb := s.redis
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("Event consumer shutting down")
+			logger.Info(label + " consumer shutting down")
 			return
 		default:
 		}
 
 		results, err := rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
-			Group:    eventConsumerGroup,
+			Group:    group,
 			Consumer: consumerName,
 			Streams:  []string{stream, ">"},
 			Count:    streamBatchSize,
@@ -107,18 +70,18 @@ func (s *Service) StartEventConsumer(ctx context.Context) {
 			if isContextDone(err) {
 				return
 			}
-			logger.Error("Event consumer read error", "err", err)
+			logger.Error(label+" consumer read error", "err", err)
 			time.Sleep(time.Second)
 			continue
 		}
 
 		for _, xr := range results {
 			for _, msg := range xr.Messages {
-				if err := s.handleEventMessage(ctx, msg); err != nil {
-					logger.Error("Event message handle error", "msg_id", msg.ID, "err", err)
-					continue
+				if err := handler(ctx, msg); err != nil {
+					logger.Error(label+" message handle error", "msg_id", msg.ID, "err", err)
+					continue // 不 XACK，等待重试
 				}
-				rdb.XAck(ctx, stream, eventConsumerGroup, msg.ID)
+				rdb.XAck(ctx, stream, group, msg.ID)
 			}
 		}
 	}
@@ -176,12 +139,25 @@ func (s *Service) handleEventMessage(ctx context.Context, msg redis.XMessage) er
 	case "status":
 		// 状态变更（如 running）
 		if event.Status != "" {
-			return s.tasks.UpdateStatus(ctx, event.TaskID, event.Status, 0, 0, 0, "")
+			if err := s.tasks.UpdateStatus(ctx, event.TaskID, event.Status, 0, 0, 0, ""); err != nil {
+				return err
+			}
+			// 状态变为 running 时记录开始时间
+			if event.Status == "running" {
+				now := time.Now()
+				return s.tasks.UpdateTimestamps(ctx, event.TaskID, &now, nil)
+			}
+			return nil
 		}
 
 	case "list_synced":
 		// 列表同步完成
-		return s.tasks.UpdateStatus(ctx, event.TaskID, "running", event.ListCount, event.ListCount, 0, "")
+		if err := s.tasks.UpdateStatus(ctx, event.TaskID, "running", event.ListCount, event.ListCount, 0, ""); err != nil {
+			return err
+		}
+		// 列表同步完成意味着任务已开始运行，记录开始时间
+		now := time.Now()
+		return s.tasks.UpdateTimestamps(ctx, event.TaskID, &now, nil)
 
 	case "task_done":
 		now := time.Now()
@@ -209,9 +185,7 @@ func (s *Service) handleEventMessage(ctx context.Context, msg redis.XMessage) er
 
 // updateTaskFinished 更新任务完成时间
 func (s *Service) updateTaskFinished(ctx context.Context, taskID string, t *time.Time) error {
-	// 通过仓储的 UpdateStatus 无法设置 finished_at，需要直接更新
-	// 这里复用 UpdateStatus 的 error 字段传空，不影响
-	return nil // finished_at 在 UpdateStatus 中暂未支持，后续可扩展
+	return s.tasks.UpdateTimestamps(ctx, taskID, nil, t)
 }
 
 // ensureGroup 确保 Consumer Group 存在

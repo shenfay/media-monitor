@@ -21,6 +21,40 @@ func NewAdminHandler(service *admin.Service) *AdminHandler {
 	return &AdminHandler{service: service}
 }
 
+// RegisterRoutes 注册管理员路由（路由组已由外部应用 auth + perm 中间件）
+func (h *AdminHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	// 用户管理
+	rg.GET("/users", h.ListUsers)
+	rg.POST("/users", h.CreateUser)
+	rg.PUT("/users/:id", h.UpdateUser)
+	rg.PATCH("/users/:id/status", h.ToggleUserStatus)
+
+	// 角色管理
+	rg.GET("/roles", h.ListRoles)
+	rg.POST("/roles", h.CreateRole)
+	rg.PUT("/roles/:id", h.UpdateRole)
+	rg.DELETE("/roles/:id", h.DeleteRole)
+	rg.PATCH("/roles/:id/status", h.ToggleRoleStatus)
+
+	// 权限管理
+	rg.GET("/roles/:id/permissions", h.GetRolePermissions)
+	rg.PUT("/roles/:id/permissions", h.UpdateRolePermissions)
+
+	// 菜单管理
+	rg.GET("/menus", h.ListMenus)
+	rg.POST("/menus", h.CreateMenu)
+	rg.PUT("/menus/:id", h.UpdateMenu)
+	rg.DELETE("/menus/:id", h.DeleteMenu)
+	rg.PATCH("/menus/:id/status", h.ToggleMenuStatus)
+	rg.PUT("/menus/sort", h.UpdateMenuSort)
+}
+
+// RegisterUserMenuRoutes 注册当前用户权限与菜单路由（只需 auth 中间件）
+func (h *AdminHandler) RegisterUserMenuRoutes(rg *gin.RouterGroup) {
+	rg.GET("/permissions", h.GetCurrentUserPermissions)
+	rg.GET("/menus", h.GetUserMenuTree)
+}
+
 // ---- 请求 DTO ----
 
 // createUserRequest 创建用户请求
