@@ -14,19 +14,8 @@ import {
 } from '@/services/message'
 import { message } from 'antd'
 import { usePushNotification } from '@/hooks/useWebSocket'
+import { formatTime } from '@/utils/format'
 
-function formatTime(dateStr: string, lang: string): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  return d.toLocaleString(lang, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-}
 
 export default function MyMessages() {
   const { t, i18n } = useTranslation()

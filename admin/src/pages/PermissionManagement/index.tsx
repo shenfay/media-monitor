@@ -22,6 +22,7 @@ type PermTreeNode = {
   title: string
   key: string
   permission?: string
+  permissions?: string[]  // 菜单关联的所有 API 权限
   children?: PermTreeNode[]
 }
 
@@ -38,13 +39,29 @@ function buildPermissionTree(menus: MenuItem[]): PermTreeNode[] {
       .filter(c => c.status && !seenKeys.has(c.key))
       .map(item => {
         seenKeys.add(item.key)
-        return { title: item.label, key: item.key, permission: item.permission || `${item.key}:view` }
+        return {
+          title: item.label,
+          key: item.key,
+          permission: item.permission || `${item.key}:view`,
+          permissions: item.permissions || [item.permission || `${item.key}:view`]
+        }
       })
 
     if (children.length > 0) {
-      tree.push({ title: menu.label, key: menu.key, children })
+      tree.push({
+        title: menu.label,
+        key: menu.key,
+        permission: menu.permission,
+        permissions: menu.permissions,
+        children
+      })
     } else {
-      tree.push({ title: menu.label, key: menu.key, permission: menu.permission || `${menu.key}:view` })
+      tree.push({
+        title: menu.label,
+        key: menu.key,
+        permission: menu.permission || `${menu.key}:view`,
+        permissions: menu.permissions || [menu.permission || `${menu.key}:view`]
+      })
     }
   }
   return tree
@@ -63,16 +80,16 @@ function getAllLeafKeys(treeData: PermTreeNode[]): string[] {
   return keys
 }
 
-/** 构建 key -> permission 映射 */
-function buildKeyPermMap(treeData: PermTreeNode[]): Record<string, string> {
-  const map: Record<string, string> = {}
+/** 构建 key -> permissions 映射（一个菜单可能关联多个 API 权限） */
+function buildKeyPermMap(treeData: PermTreeNode[]): Record<string, string[]> {
+  const map: Record<string, string[]> = {}
   for (const node of treeData) {
     if (node.children) {
       node.children.forEach(item => {
-        map[item.key] = item.permission || `${item.key}:view`
+        map[item.key] = item.permissions || [item.permission || `${item.key}:view`]
       })
     } else {
-      map[node.key] = node.permission || `${node.key}:view`
+      map[node.key] = node.permissions || [node.permission || `${node.key}:view`]
     }
   }
   return map
@@ -126,14 +143,21 @@ export default function PermissionManagement() {
     setPermLoading(true)
     try {
       const perms = await getRolePermissions(role.id)
-      const permToKey: Record<string, string> = {}
-      Object.entries(keyPermMap).forEach(([key, perm]) => {
-        permToKey[perm] = key
+      // 构建 permission -> menuKey 的反向映射
+      const permToKeys: Record<string, string[]> = {}
+      Object.entries(keyPermMap).forEach(([key, perms]) => {
+        perms.forEach(p => {
+          if (!permToKeys[p]) permToKeys[p] = []
+          permToKeys[p].push(key)
+        })
       })
-      const menuKeys = perms
-        .map((p: string) => permToKey[p])
-        .filter((k): k is string => !!k)
-      setCheckedKeys(menuKeys)
+      // 根据角色的权限找出对应的菜单 key
+      const menuKeys = new Set<string>()
+      perms.forEach((p: string) => {
+        const keys = permToKeys[p]
+        if (keys) keys.forEach(k => menuKeys.add(k))
+      })
+      setCheckedKeys(Array.from(menuKeys))
     } catch {
       setCheckedKeys([])
     } finally {
@@ -152,14 +176,15 @@ export default function PermissionManagement() {
     if (!selectedRole) return
     setPermLoading(true)
     try {
-      const permissions: string[] = []
+      // 收集选中菜单的所有关联权限
+      const permissions = new Set<string>()
       checkedKeys.forEach(key => {
-        const perm = keyPermMap[key]
-        if (perm) {
-          permissions.push(perm)
+        const perms = keyPermMap[key]
+        if (perms) {
+          perms.forEach(p => permissions.add(p))
         }
       })
-      await updateRolePermissions(selectedRole.id, permissions)
+      await updateRolePermissions(selectedRole.id, Array.from(permissions))
       message.success(t('permSaved'))
     } catch {
       message.error(t('permSaveFailed'))

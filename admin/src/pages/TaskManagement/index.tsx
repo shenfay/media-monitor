@@ -4,42 +4,11 @@ import { Table, Tag, Button, Space, Select, Modal, Form, InputNumber, Switch, me
 import { PlusOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import { getTasks, getSources, createTask, type TaskRun, type Source } from '@/services/crawl'
-
-const statusKeys: Record<string, string> = {
-  queued: 'crawlQueued',
-  running: 'crawlRunning',
-  success: 'success',
-  partial: 'crawlPartial',
-  failed: 'failed',
-}
-
-const statusColors: Record<string, string> = {
-  queued: 'default',
-  running: 'processing',
-  success: 'success',
-  partial: 'warning',
-  failed: 'error',
-}
-
-function formatTime(dateStr: string | null): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-}
-
-function formatDuration(start: string | null, end: string | null): string {
-  if (!start) return '-'
-  const s = new Date(start).getTime()
-  const e = end ? new Date(end).getTime() : Date.now()
-  const diff = Math.floor((e - s) / 1000)
-  if (diff < 60) return `${diff}s`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m${diff % 60}s`
-  return `${Math.floor(diff / 3600)}h${Math.floor((diff % 3600) / 60)}m`
-}
+import { formatTime, formatDuration } from '@/utils/format'
+import { TASK_STATUS_COLORS, TASK_STATUS_KEYS } from '@/constants/status'
 
 export default function TaskManagement() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [tasks, setTasks] = useState<TaskRun[]>([])
   const [sources, setSources] = useState<Source[]>([])
   const [loading, setLoading] = useState(false)
@@ -89,14 +58,14 @@ export default function TaskManagement() {
     { title: t('crawlTrigger'), dataIndex: 'triggered_by', key: 'triggered_by', width: 70, render: (v: string) => <Tag>{v}</Tag> },
     {
       title: t('status'), dataIndex: 'status', key: 'status', width: 90,
-      render: (v: string) => <Tag color={statusColors[v] || 'default'}>{t(statusKeys[v] || v)}</Tag>,
+      render: (v: string) => <Tag color={TASK_STATUS_COLORS[v] || 'default'}>{t(TASK_STATUS_KEYS[v] || v)}</Tag>,
     },
     {
       title: t('crawlResult'), key: 'counts', width: 120,
       render: (_: unknown, r: TaskRun) => `${r.ingested}/${r.total}${r.failed ? ` (${r.failed}${t('failed')})` : ''}`,
     },
-    { title: t('crawlDuration'), key: 'duration', width: 80, render: (_: unknown, r: TaskRun) => formatDuration(r.started_at, r.finished_at) },
-    { title: t('createdAt'), dataIndex: 'created_at', key: 'created_at', width: 160, render: (v: string) => formatTime(v) },
+    { title: t('crawlDuration'), key: 'duration', width: 80, render: (_: unknown, r: TaskRun) => formatDuration(r.started_at, r.finished_at, t) },
+    { title: t('createdAt'), dataIndex: 'created_at', key: 'created_at', width: 160, render: (v: string) => formatTime(v, i18n.language) },
   ]
 
   return (
@@ -135,14 +104,14 @@ export default function TaskManagement() {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="ID">{detailTask.id}</Descriptions.Item>
             <Descriptions.Item label={t('crawlDataSource')}>{sourceMap[detailTask.source_id] || detailTask.source_id}</Descriptions.Item>
-            <Descriptions.Item label={t('status')}><Tag color={statusColors[detailTask.status]}>{t(statusKeys[detailTask.status] || detailTask.status)}</Tag></Descriptions.Item>
+            <Descriptions.Item label={t('status')}><Tag color={TASK_STATUS_COLORS[detailTask.status]}>{t(TASK_STATUS_KEYS[detailTask.status] || detailTask.status)}</Tag></Descriptions.Item>
             <Descriptions.Item label={t('crawlTotal')}>{detailTask.total}</Descriptions.Item>
             <Descriptions.Item label={t('success')}>{detailTask.ingested}</Descriptions.Item>
             <Descriptions.Item label={t('failed')}>{detailTask.failed}</Descriptions.Item>
             {detailTask.error && <Descriptions.Item label={t('crawlError')}><span style={{ color: 'var(--red)' }}>{detailTask.error}</span></Descriptions.Item>}
-            <Descriptions.Item label={t('crawlStartTime')}>{formatTime(detailTask.started_at)}</Descriptions.Item>
-            <Descriptions.Item label={t('crawlEndTime')}>{formatTime(detailTask.finished_at)}</Descriptions.Item>
-            <Descriptions.Item label={t('crawlDuration')}>{formatDuration(detailTask.started_at, detailTask.finished_at)}</Descriptions.Item>
+            <Descriptions.Item label={t('crawlStartTime')}>{formatTime(detailTask.started_at, i18n.language)}</Descriptions.Item>
+            <Descriptions.Item label={t('crawlEndTime')}>{formatTime(detailTask.finished_at, i18n.language)}</Descriptions.Item>
+            <Descriptions.Item label={t('crawlDuration')}>{formatDuration(detailTask.started_at, detailTask.finished_at, t)}</Descriptions.Item>
           </Descriptions>
         )}
       </Drawer>

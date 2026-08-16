@@ -5,20 +5,8 @@ import DataPanel from '@/components/DataPanel'
 import { DEFAULT_PAGINATION, getPaginationShowTotal } from '@/config/pagination'
 import { useCrudList } from '@/hooks/useCrudList'
 import { getOperationLogs, type OperationLogRecord } from '@/services/operationLog'
+import { formatTimeWithSeconds } from '@/utils/format'
 
-function formatTime(dateStr: string, lang: string): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  return d.toLocaleString(lang, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
-}
 
 export default function OperationLog() {
   const { t, i18n } = useTranslation()
@@ -94,7 +82,7 @@ export default function OperationLog() {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 170,
-      render: (v: string) => formatTime(v, i18n.language),
+      render: (v: string) => formatTimeWithSeconds(v, i18n.language),
     },
     {
       title: t('operator'),

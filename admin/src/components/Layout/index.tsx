@@ -5,7 +5,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import PageContainer from './PageContainer'
 import { useUserStore } from '@/stores'
-import { getUserMenuTree } from '@/services/auth'
+import { getUserMenuTree, getPermissions } from '@/services/auth'
 import { cancelAllRequests } from '@/utils/request'
 import { useWebSocketInit } from '@/hooks/useWebSocket'
 import type { ReactNode } from 'react'
@@ -19,7 +19,7 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isLogin, setMenuTree } = useUserStore()
+  const { isLogin, setMenuTree, updatePermissions } = useUserStore()
   const [contentKey, setContentKey] = useState(0)
 
   // 初始化 WebSocket 连接（实时推送）
@@ -41,7 +41,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     }
   }, [isLogin, navigate])
 
-  // 每次页面加载时都获取最新菜单树，确保权限变更后菜单实时更新
+  // 每次页面加载时都获取最新菜单树和权限，确保权限变更后实时生效
   useEffect(() => {
     if (isLogin) {
       getUserMenuTree()
@@ -51,8 +51,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
         .catch(() => {
           // 获取失败静默处理
         })
+      getPermissions()
+        .then(perms => {
+          if (perms) {
+            updatePermissions(perms)
+          }
+        })
+        .catch(() => {
+          // 获取失败静默处理
+        })
     }
-  }, [isLogin, setMenuTree])
+  }, [isLogin, setMenuTree, updatePermissions])
 
   if (!isLogin) {
     return null

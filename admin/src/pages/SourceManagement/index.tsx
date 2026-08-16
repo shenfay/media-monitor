@@ -1,21 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Table, Tag, Button, Space, Switch, Form, Input, InputNumber, Select, Popconfirm, message, Drawer, Descriptions, Row, Col, Divider, Typography } from 'antd'
-import { PlusOutlined, PlayCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { Table, Tag, Button, Space, Switch, Form, Input, InputNumber, Select, Popconfirm, message, Drawer, Descriptions, Row, Col, Divider, Typography, Dropdown, Modal } from 'antd'
+import { PlusOutlined, PlayCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, LinkOutlined, MoreOutlined } from '@ant-design/icons'
 import DataPanel from '@/components/DataPanel'
 import { getSources, createSource, updateSource, deleteSource, runSource, type Source } from '@/services/crawl'
+import { formatTime } from '@/utils/format'
+import { getPlatformLabels } from '@/constants/status'
 
 const { TextArea } = Input
 
-function formatTime(dateStr: string | null): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
 export default function SourceManagement() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [sources, setSources] = useState<Source[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -97,9 +92,11 @@ export default function SourceManagement() {
     } catch { message.error(t('crawlOpFailed')) }
   }
 
+  const platformLabel = getPlatformLabels(t)
+
   const columns = [
     { title: t('name'), dataIndex: 'name', key: 'name', width: 160, ellipsis: true },
-    { title: t('crawlPlatform'), dataIndex: 'platform_type', key: 'platform_type', width: 80, render: (v: string) => <Tag>{v || t('crawlNews')}</Tag> },
+    { title: t('crawlPlatform'), dataIndex: 'platform_type', key: 'platform_type', width: 80, render: (v: string) => <Tag>{platformLabel[v] || v || t('crawlNews')}</Tag> },
     {
       title: t('crawlNodes'), dataIndex: 'nodes', key: 'nodes', width: 160,
       render: (v: string[]) => v?.length ? v.map(n => <Tag key={n}>{n}</Tag>) : <span style={{ color: 'var(--text-quaternary)' }}>-</span>,
@@ -113,9 +110,10 @@ export default function SourceManagement() {
       title: t('crawlEnabled'), dataIndex: 'enabled', key: 'enabled', width: 60,
       render: (_: boolean, record: Source) => <Switch size="small" checked={record.enabled} onChange={c => handleToggleEnabled(record, c)} />,
     },
-    { title: t('crawlLastCrawl'), dataIndex: 'last_crawl_at', key: 'last_crawl_at', width: 150, render: (v: string | null) => formatTime(v) },
+    { title: t('crawlArticleCount'), dataIndex: 'article_count', key: 'article_count', width: 80, render: (v: number) => v ?? 0 },
+    { title: t('crawlLastCrawl'), dataIndex: 'last_crawl_at', key: 'last_crawl_at', width: 150, render: (v: string | null) => formatTime(v, i18n.language) },
     {
-      title: t('actions'), key: 'actions', width: 220,
+      title: t('actions'), key: 'actions', width: 180,
       render: (_: unknown, record: Source) => (
         <Space size={4}>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setDetailSource(record); setDetailOpen(true) }}>
@@ -124,14 +122,23 @@ export default function SourceManagement() {
           <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => handleRun(record.id)}>
             {t('crawlRun')}
           </Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            {t('edit')}
-          </Button>
-          <Popconfirm title={t('crawlConfirmDelete')} onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              {t('delete')}
-            </Button>
-          </Popconfirm>
+          <Dropdown
+            menu={{
+              items: [
+                { key: 'sourcePage', icon: <LinkOutlined />, label: t('crawlViewSourcePage'), disabled: !(record.base_url && record.list_endpoint), onClick: () => record.base_url && record.list_endpoint && window.open(record.base_url + record.list_endpoint, '_blank') },
+                { key: 'edit', icon: <EditOutlined />, label: t('edit'), onClick: () => handleEdit(record) },
+                { type: 'divider' },
+                { key: 'delete', icon: <DeleteOutlined />, label: t('delete'), danger: true },
+              ],
+              onClick: ({ key }) => {
+                  if (key === 'delete') {
+                    Modal.confirm({ title: t('crawlConfirmDelete'), onOk: () => handleDelete(record.id) })
+                  }
+                },
+            }}
+          >
+            <Button type="link" size="small" icon={<MoreOutlined />} />
+          </Dropdown>
         </Space>
       ),
     },
@@ -202,8 +209,12 @@ export default function SourceManagement() {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="ID">{detailSource.id}</Descriptions.Item>
             <Descriptions.Item label={t('name')}>{detailSource.name}</Descriptions.Item>
-            <Descriptions.Item label={t('crawlPlatform')}>{detailSource.platform_type}</Descriptions.Item>
-            <Descriptions.Item label={t('crawlBaseUrl')}>{detailSource.base_url || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('crawlPlatform')}>{platformLabel[detailSource.platform_type] || detailSource.platform_type}</Descriptions.Item>
+            <Descriptions.Item label={t('crawlSourcePage')}>
+              {detailSource.base_url && detailSource.list_endpoint
+                ? <a href={detailSource.base_url + detailSource.list_endpoint} target="_blank" rel="noopener noreferrer">{detailSource.base_url + detailSource.list_endpoint}</a>
+                : detailSource.base_url || '-'}
+            </Descriptions.Item>
             <Descriptions.Item label={t('crawlListEndpoint')}>{detailSource.list_endpoint || '-'}</Descriptions.Item>
             <Descriptions.Item label={t('crawlNodes')}>{detailSource.nodes?.join(', ') || '-'}</Descriptions.Item>
             <Descriptions.Item label={t('crawlSourceFilter')}>{detailSource.source_filter || '-'}</Descriptions.Item>
@@ -211,8 +222,8 @@ export default function SourceManagement() {
             <Descriptions.Item label={t('crawlSchedule')}>{detailSource.schedule || t('crawlManual')}</Descriptions.Item>
             <Descriptions.Item label={t('crawlTags')}>{detailSource.tags?.join(', ') || t('crawlUniversal')}</Descriptions.Item>
             <Descriptions.Item label={t('crawlEnabled')}>{detailSource.enabled ? t('yes') : t('no')}</Descriptions.Item>
-            <Descriptions.Item label={t('crawlLastCrawl')}>{formatTime(detailSource.last_crawl_at)}</Descriptions.Item>
-            <Descriptions.Item label={t('createdAt')}>{formatTime(detailSource.created_at)}</Descriptions.Item>
+            <Descriptions.Item label={t('crawlLastCrawl')}>{formatTime(detailSource.last_crawl_at, i18n.language)}</Descriptions.Item>
+            <Descriptions.Item label={t('createdAt')}>{formatTime(detailSource.created_at, i18n.language)}</Descriptions.Item>
           </Descriptions>
         )}
       </Drawer>

@@ -4,18 +4,13 @@ import { Table, Tag, Button, Select, Input, message, Drawer, Descriptions, Typog
 import { EyeOutlined } from '@ant-design/icons'
 import DataPanel, { FilterSearch } from '@/components/DataPanel'
 import { getArticles, getArticle, getSources, type Article, type Source } from '@/services/crawl'
+import { formatTime } from '@/utils/format'
+import { ARTICLE_STATUS_COLORS, getArticleStatusLabel, getPlatformLabels } from '@/constants/status'
 
 const { Paragraph } = Typography
 
-function formatTime(dateStr: string | null): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
 export default function ArticleManagement() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [articles, setArticles] = useState<Article[]>([])
   const [sources, setSources] = useState<Source[]>([])
   const [loading, setLoading] = useState(false)
@@ -26,6 +21,7 @@ export default function ArticleManagement() {
   // Filters
   const [sourceFilter, setSourceFilter] = useState('')
   const [platformFilter, setPlatformFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [keyword, setKeyword] = useState('')
 
   // Detail
@@ -44,6 +40,7 @@ export default function ArticleManagement() {
       }
       if (sourceFilter) params.source_id = sourceFilter
       if (platformFilter) params.platform = platformFilter
+      if (statusFilter) params.status = statusFilter
       if (keyword) params.keyword = keyword
 
       const res = await getArticles(params as Parameters<typeof getArticles>[0])
@@ -51,7 +48,7 @@ export default function ArticleManagement() {
       setTotal(res.total || 0)
     } catch { /* ignore */ }
     finally { setLoading(false) }
-  }, [page, pageSize, sourceFilter, platformFilter, keyword])
+  }, [page, pageSize, sourceFilter, platformFilter, statusFilter, keyword])
 
   useEffect(() => {
     getSources().then(setSources).catch(() => {})
@@ -77,6 +74,11 @@ export default function ArticleManagement() {
     fetchData()
   }
 
+  const statusColors = ARTICLE_STATUS_COLORS
+  const statusLabel = getArticleStatusLabel(t)
+
+  const platformLabel = getPlatformLabels(t)
+
   const columns = [
     {
       title: t('crawlTitle'), dataIndex: 'title', key: 'title', ellipsis: true,
@@ -94,11 +96,12 @@ export default function ArticleManagement() {
       title: t('crawlSource'), dataIndex: 'source_id', key: 'source_id', width: 120, ellipsis: true,
       render: (v: string, record: Article) => record.source_name || sourceMap[v] || v?.slice(0, 8) || '-',
     },
-    { title: t('crawlPlatform'), dataIndex: 'platform', key: 'platform', width: 80, render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
+    { title: t('crawlPlatform'), dataIndex: 'platform', key: 'platform', width: 80, render: (v: string) => v ? <Tag>{platformLabel[v] || v}</Tag> : '-' },
+    { title: t('crawlArticleStatus'), dataIndex: 'status', key: 'status', width: 80, render: (v: string) => v ? <Tag color={statusColors[v] || 'default'}>{statusLabel[v] || v}</Tag> : '-' },
     { title: t('crawlAuthor'), dataIndex: 'author', key: 'author', width: 100, ellipsis: true, render: (v: string) => v || '-' },
     { title: t('crawlLanguage'), dataIndex: 'language', key: 'language', width: 60, render: (v: string) => v || '-' },
-    { title: t('crawlPublishTime'), dataIndex: 'published_at', key: 'published_at', width: 150, render: (v: string | null) => formatTime(v) },
-    { title: t('crawlFetchedAt'), dataIndex: 'fetched_at', key: 'fetched_at', width: 150, render: (v: string) => formatTime(v) },
+    { title: t('crawlPublishTime'), dataIndex: 'published_at', key: 'published_at', width: 150, render: (v: string | null) => formatTime(v, i18n.language) },
+    { title: t('crawlFetchedAt'), dataIndex: 'fetched_at', key: 'fetched_at', width: 150, render: (v: string) => formatTime(v, i18n.language) },
     {
       title: t('actions'), key: 'actions', width: 110,
       render: (_: unknown, record: Article) => (
@@ -131,6 +134,16 @@ export default function ArticleManagement() {
                 { value: 'social_overseas', label: t('crawlSocialOverseas') },
               ]}
             />
+            <Select
+              value={statusFilter} onChange={v => { setStatusFilter(v); setPage(1) }} style={{ width: 120 }}
+              placeholder={t('crawlAllStatus')} allowClear
+              options={[
+                { value: '', label: t('crawlAllStatus') },
+                { value: 'pending', label: t('crawlStatusPending') },
+                { value: 'completed', label: t('crawlStatusCompleted') },
+                { value: 'failed', label: t('crawlStatusFailed') },
+              ]}
+            />
             </>
         }
       >
@@ -159,11 +172,11 @@ export default function ArticleManagement() {
             <Descriptions column={2} bordered size="small">
               <Descriptions.Item label={t('crawlTitle')} span={2}>{detailArticle.title}</Descriptions.Item>
               <Descriptions.Item label={t('crawlSource')}>{detailArticle.source_name || sourceMap[detailArticle.source_id] || '-'}</Descriptions.Item>
-              <Descriptions.Item label={t('crawlPlatform')}>{detailArticle.platform || '-'}</Descriptions.Item>
+              <Descriptions.Item label={t('crawlPlatform')}>{platformLabel[detailArticle.platform] || detailArticle.platform || '-'}</Descriptions.Item>
               <Descriptions.Item label={t('crawlAuthor')}>{detailArticle.author || '-'}</Descriptions.Item>
               <Descriptions.Item label={t('crawlLanguage')}>{detailArticle.language || '-'}</Descriptions.Item>
-              <Descriptions.Item label={t('crawlPublishTime')}>{formatTime(detailArticle.published_at)}</Descriptions.Item>
-              <Descriptions.Item label={t('crawlFetchedAt')}>{formatTime(detailArticle.fetched_at)}</Descriptions.Item>
+              <Descriptions.Item label={t('crawlPublishTime')}>{formatTime(detailArticle.published_at, i18n.language)}</Descriptions.Item>
+              <Descriptions.Item label={t('crawlFetchedAt')}>{formatTime(detailArticle.fetched_at, i18n.language)}</Descriptions.Item>
               <Descriptions.Item label={t('crawlUrl')} span={2}>
                 {detailArticle.url ? <a href={detailArticle.url} target="_blank" rel="noopener noreferrer">{detailArticle.url}</a> : '-'}
               </Descriptions.Item>

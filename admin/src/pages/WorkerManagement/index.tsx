@@ -12,49 +12,14 @@ import {
   type WorkerInfo,
   type AdapterMeta,
 } from '@/services/worker'
+import { formatTime, formatTimeWithSeconds, timeAgo } from '@/utils/format'
+import { WORKER_STATUS_COLORS, WORKER_STATUS_KEYS, getPlatformLabels } from '@/constants/status'
 
 const REFRESH_INTERVAL = 10_000
 
-const statusColors: Record<string, string> = {
-  online: 'success',
-  offline: 'default',
-  paused: 'warning',
-}
-
-const statusKeys: Record<string, string> = {
-  online: 'workerOnline',
-  offline: 'workerOffline',
-  paused: 'workerPaused',
-}
-
-function formatTime(dateStr: string): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
-}
-
-function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '-'
-  const diff = Math.floor((Date.now() - d.getTime()) / 1000)
-  if (diff < 60) return t('workerTimeAgoSec', { n: diff })
-  if (diff < 3600) return t('workerTimeAgoMin', { n: Math.floor(diff / 60) })
-  if (diff < 86400) return t('workerTimeAgoHour', { n: Math.floor(diff / 3600) })
-  return t('workerTimeAgoDay', { n: Math.floor(diff / 86400) })
-}
 
 export default function WorkerManagement() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [workers, setWorkers] = useState<WorkerInfo[]>([])
   const [adapters, setAdapters] = useState<AdapterMeta[]>([])
   const [loading, setLoading] = useState(false)
@@ -97,6 +62,8 @@ export default function WorkerManagement() {
     }
   }
 
+  const platformLabel = getPlatformLabels(t)
+
   const workerColumns = [
     {
       title: t('workerName'),
@@ -115,8 +82,8 @@ export default function WorkerManagement() {
       key: 'status',
       width: 80,
       render: (v: string) => {
-        const color = statusColors[v] || 'default'
-        return <Badge status={color as 'success' | 'default' | 'warning'} text={t(statusKeys[v] || v)} />
+        const color = WORKER_STATUS_COLORS[v] || 'default'
+        return <Badge status={color as 'success' | 'default' | 'warning'} text={t(WORKER_STATUS_KEYS[v] || v)} />
       },
     },
     {
@@ -162,14 +129,14 @@ export default function WorkerManagement() {
       dataIndex: 'last_heartbeat',
       key: 'last_heartbeat',
       width: 110,
-      render: (v: string) => <Tooltip title={formatTime(v)}>{timeAgo(v, t)}</Tooltip>,
+      render: (v: string) => <Tooltip title={formatTimeWithSeconds(v, i18n.language)}>{timeAgo(v, t)}</Tooltip>,
     },
     {
       title: t('workerStartedAt'),
       dataIndex: 'started_at',
       key: 'started_at',
       width: 160,
-      render: (v: string) => formatTime(v),
+      render: (v: string) => formatTimeWithSeconds(v, i18n.language),
     },
     {
       title: t('actions'),
@@ -236,7 +203,7 @@ export default function WorkerManagement() {
                 <Card size="small" title={adapter.name}>
                   <div style={{ marginBottom: 8 }}>
                     <span style={{ color: 'var(--text-secondary)' }}>{t('workerPlatformType')}：</span>
-                    <Tag>{adapter.platform_type || 'news'}</Tag>
+                    <Tag>{platformLabel[adapter.platform_type] || adapter.platform_type || t('crawlNews')}</Tag>
                   </div>
                   <div style={{ marginBottom: 8 }}>
                     <span style={{ color: 'var(--text-secondary)' }}>{t('workerRequiredTags')}：</span>
@@ -248,7 +215,7 @@ export default function WorkerManagement() {
                   <div>
                     <span style={{ color: 'var(--text-secondary)' }}>{t('workerFirstSeen')}：</span>
                     <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-                      {formatTime(adapter.first_seen)}
+                      {formatTimeWithSeconds(adapter.first_seen, i18n.language)}
                     </span>
                   </div>
                 </Card>
