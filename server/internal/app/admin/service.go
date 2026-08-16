@@ -515,18 +515,19 @@ type RoleDTO struct {
 
 // MenuDTO 菜单数据传输对象
 type MenuDTO struct {
-	ID         string     `json:"id"`
-	Key        string     `json:"key"`
-	Label      string     `json:"label"`
-	Icon       string     `json:"icon"`
-	Path       string     `json:"path"`
-	Permission string     `json:"permission"`
-	ParentID   string     `json:"parent_id"`
-	SortOrder  int        `json:"sort_order"`
-	Status     bool       `json:"status"`
-	Children   []*MenuDTO `json:"children,omitempty"`
-	CreatedAt  time.Time  `json:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at"`
+	ID          string     `json:"id"`
+	Key         string     `json:"key"`
+	Label       string     `json:"label"`
+	Icon        string     `json:"icon"`
+	Path        string     `json:"path"`
+	Permission  string     `json:"permission"`
+	Permissions []string   `json:"permissions"`
+	ParentID    string     `json:"parent_id"`
+	SortOrder   int        `json:"sort_order"`
+	Status      bool       `json:"status"`
+	Children    []*MenuDTO `json:"children,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // ---- 转换函数 ----
@@ -571,17 +572,18 @@ func rolesToBriefs(roles []*rbac.Role) []rbac.RoleBrief {
 
 func toMenuDTO(m *rbac.Menu) *MenuDTO {
 	return &MenuDTO{
-		ID:         m.ID,
-		Key:        m.Key,
-		Label:      m.Label,
-		Icon:       m.Icon,
-		Path:       m.Path,
-		Permission: m.Permission,
-		ParentID:   m.ParentID,
-		SortOrder:  m.SortOrder,
-		Status:     m.Status,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		ID:          m.ID,
+		Key:         m.Key,
+		Label:       m.Label,
+		Icon:        m.Icon,
+		Path:        m.Path,
+		Permission:  m.Permission,
+		Permissions: m.Permissions,
+		ParentID:    m.ParentID,
+		SortOrder:   m.SortOrder,
+		Status:      m.Status,
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
 	}
 }
 
@@ -600,16 +602,17 @@ func buildMenuTree(menus []*rbac.Menu, parentID string) []*rbac.MenuTreeNode {
 		nodes := make([]*rbac.MenuTreeNode, 0, len(children))
 		for _, m := range children {
 			nodes = append(nodes, &rbac.MenuTreeNode{
-				ID:         m.ID,
-				Key:        m.Key,
-				Label:      m.Label,
-				Icon:       m.Icon,
-				Path:       m.Path,
-				Permission: m.Permission,
-				ParentID:   m.ParentID,
-				SortOrder:  m.SortOrder,
-				Status:     m.Status,
-				Children:   build(m.ID),
+				ID:          m.ID,
+				Key:         m.Key,
+				Label:       m.Label,
+				Icon:        m.Icon,
+				Path:        m.Path,
+				Permission:  m.Permission,
+				Permissions: m.Permissions,
+				ParentID:    m.ParentID,
+				SortOrder:   m.SortOrder,
+				Status:      m.Status,
+				Children:    build(m.ID),
 			})
 		}
 		return nodes

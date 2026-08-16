@@ -22,7 +22,7 @@ const (
 
 // Redis Key 前缀
 const (
-	RedisKeyPrefix            = "kiqi:"
+	RedisKeyPrefix            = "media_monitor:"
 	RedisKeyRefreshToken      = RedisKeyPrefix + "refresh_token:"
 	RedisKeyAccessDevice      = RedisKeyPrefix + "access_device:" // access_token → device_token_id 映射
 	RedisKeyUserSession       = RedisKeyPrefix + "user_session:"

@@ -26,7 +26,7 @@ jwt:
   secret: smLuhX79IBihMgtVucmefmdP8Gt8hshA  # 请根据实际情况修改
   access_expire: 30m
   refresh_expire: 168h  # 7 天
-  issuer: kiqi
+  issuer: media_monitor
 
 asynq:
   addr: localhost:6379

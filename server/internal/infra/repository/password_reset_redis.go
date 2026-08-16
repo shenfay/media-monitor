@@ -16,7 +16,7 @@ type ResetTokenRedis struct {
 func NewResetTokenRedis(client redis.Cmdable) *ResetTokenRedis {
 	return &ResetTokenRedis{
 		client: client,
-		prefix: "kiqi:password_reset:",
+		prefix: "media_monitor:password_reset:",
 	}
 }
 

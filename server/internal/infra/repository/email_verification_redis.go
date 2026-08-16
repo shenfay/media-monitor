@@ -16,7 +16,7 @@ type VerificationTokenRedis struct {
 func NewVerificationTokenRedis(client redis.Cmdable) *VerificationTokenRedis {
 	return &VerificationTokenRedis{
 		client: client,
-		prefix: "kiqi:email_verification:",
+		prefix: "media_monitor:email_verification:",
 	}
 }
 
