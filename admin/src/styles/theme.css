@@ -29,8 +29,10 @@
 
   --text-primary: #2b2b2b;    /* 主要文字（标题/正文） */
   --text-secondary: #6b6258;  /* 次要文字（描述/菜单项） */
+  --text-tertiary: #9a9187;    /* 三级文字（时间戳/辅助信息） */
   --text-muted: #b0a89a;      /* 辅助文字（面包屑/占位/图标） */
   --text-icon: #c4bdb0;       /* 图标色 / Input placeholder */
+  --text-quaternary: #c4bdb0; /* 四级文字（禁用态/空值占位） */
 
   /* ========================================
      3. Border — 边框
@@ -46,6 +48,7 @@
      ======================================== */
 
   --bg-white: #ffffff;         /* 纯白（表格列背景/输入框） */
+  --bg-gray: #f5f2ed;          /* 灰色背景（代码块/JSON预览） */
   --bg-light: #faf8f5;        /* 浅米（备用浅背景） */
   --hover-bg: #f0ece6;        /* 悬浮背景（IconButton hover） */
   --hover-bg-light: #f5f2ed;  /* 浅悬浮背景（次按钮 hover/分页项 hover） */

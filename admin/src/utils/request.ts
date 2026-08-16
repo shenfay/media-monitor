@@ -1,4 +1,4 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig, type AxiosResponse, type CancelTokenSource } from 'axios'
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
 import { message } from 'antd'
 import i18n from '@/locales'
 import type { ApiResponse } from '@/types'
@@ -20,12 +20,12 @@ const request = axios.create({
 })
 
 // ---- 请求取消：路由切换时取消所有进行中的请求 ----
-let cancelTokenSource: CancelTokenSource | null = null
+let abortController: AbortController | null = null
 
 function cancelPendingRequests() {
-  if (cancelTokenSource) {
-    cancelTokenSource.cancel('路由切换，取消请求')
-    cancelTokenSource = null
+  if (abortController) {
+    abortController.abort('路由切换，取消请求')
+    abortController = null
   }
 }
 
@@ -42,9 +42,9 @@ request.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    // 为每个请求附加取消令牌
-    cancelTokenSource = axios.CancelToken.source()
-    config.cancelToken = cancelTokenSource.token
+    // 为每个请求附加 AbortController
+    abortController = new AbortController()
+    config.signal = abortController.signal
     return config
   },
   (error: AxiosError) => {
@@ -99,4 +99,13 @@ request.interceptors.response.use(
   }
 )
 
-export default request
+// ---- 类型化请求接口（响应拦截器已提取 data，返回类型为 T 而非 AxiosResponse） ----
+interface TypedRequest {
+  get<T>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+  delete<T>(url: string, config?: AxiosRequestConfig): Promise<T>
+  patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+}
+
+export default request as unknown as TypedRequest

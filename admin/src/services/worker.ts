@@ -26,14 +26,14 @@ export interface AdapterMeta {
 
 /** 获取所有 Worker 列表 */
 export async function getWorkers(): Promise<WorkerInfo[]> {
-  const res = await request.get('/v1/admin/crawl/workers')
-  return (res as unknown as WorkerInfo[]) || []
+  const res = await request.get<WorkerInfo[]>('/v1/admin/crawl/workers')
+  return res || []
 }
 
 /** 获取所有适配器列表 */
 export async function getAdapters(): Promise<AdapterMeta[]> {
-  const res = await request.get('/v1/admin/crawl/workers/adapters')
-  return (res as unknown as AdapterMeta[]) || []
+  const res = await request.get<AdapterMeta[]>('/v1/admin/crawl/workers/adapters')
+  return res || []
 }
 
 /** 暂停 Worker */

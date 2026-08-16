@@ -104,6 +104,7 @@ export interface MenuItem {
   icon: string
   path: string
   permission: string
+  permissions: string[]  // 关联的所有 API 权限
   parent_id: string
   sort_order: number
   status: boolean

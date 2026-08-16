@@ -97,10 +97,10 @@ export default function DataPanel({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 10,
+            gap: 12,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
             {filters}
           </div>
           {toolbarActions && (
