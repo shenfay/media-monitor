@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -14,17 +15,18 @@ import (
 
 // MenuPO 菜单持久化对象
 type MenuPO struct {
-	ID         string         `gorm:"primaryKey;type:varchar(50)" json:"id"`
-	Key        string         `gorm:"uniqueIndex;type:varchar(100);not null" json:"key"`
-	Label      string         `gorm:"type:varchar(100);not null" json:"label"`
-	Icon       string         `gorm:"type:varchar(100);default:''" json:"icon"`
-	Path       string         `gorm:"type:varchar(200);default:''" json:"path"`
-	Permission string         `gorm:"type:varchar(100);default:''" json:"permission"`
-	ParentID   sql.NullString `gorm:"type:varchar(50);index" json:"parent_id"`
-	SortOrder  int            `gorm:"default:0;index" json:"sort_order"`
-	Status     bool           `gorm:"default:true" json:"status"`
-	CreatedAt  TimeNull       `json:"created_at"`
-	UpdatedAt  TimeNull       `json:"updated_at"`
+	ID          string         `gorm:"primaryKey;type:varchar(50)" json:"id"`
+	Key         string         `gorm:"uniqueIndex;type:varchar(100);not null" json:"key"`
+	Label       string         `gorm:"type:varchar(100);not null" json:"label"`
+	Icon        string         `gorm:"type:varchar(100);default:''" json:"icon"`
+	Path        string         `gorm:"type:varchar(200);default:''" json:"path"`
+	Permission  string         `gorm:"type:varchar(100);default:''" json:"permission"`
+	Permissions string         `gorm:"type:text;default:'[]'" json:"permissions"` // JSON 数组
+	ParentID    sql.NullString `gorm:"type:varchar(50);index" json:"parent_id"`
+	SortOrder   int            `gorm:"default:0;index" json:"sort_order"`
+	Status      bool           `gorm:"default:true" json:"status"`
+	CreatedAt   TimeNull       `json:"created_at"`
+	UpdatedAt   TimeNull       `json:"updated_at"`
 }
 
 func (MenuPO) TableName() string { return "menus" }
@@ -42,18 +44,24 @@ func (po *MenuPO) ToDomain() *rbac.Menu {
 	if po.UpdatedAt.Valid {
 		updatedAt = po.UpdatedAt.Time
 	}
+	// 解析 permissions JSON
+	var permissions []string
+	if po.Permissions != "" {
+		_ = json.Unmarshal([]byte(po.Permissions), &permissions)
+	}
 	return &rbac.Menu{
-		ID:         po.ID,
-		Key:        po.Key,
-		Label:      po.Label,
-		Icon:       po.Icon,
-		Path:       po.Path,
-		Permission: po.Permission,
-		ParentID:   po.ParentID.String,
-		SortOrder:  po.SortOrder,
-		Status:     po.Status,
-		CreatedAt:  createdAt,
-		UpdatedAt:  updatedAt,
+		ID:          po.ID,
+		Key:         po.Key,
+		Label:       po.Label,
+		Icon:        po.Icon,
+		Path:        po.Path,
+		Permission:  po.Permission,
+		Permissions: permissions,
+		ParentID:    po.ParentID.String,
+		SortOrder:   po.SortOrder,
+		Status:      po.Status,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 }
 
@@ -70,6 +78,16 @@ func MenuPOFromDomain(m *rbac.Menu) *MenuPO {
 		Status:     m.Status,
 		CreatedAt:  TimeNull{Time: m.CreatedAt, Valid: true},
 		UpdatedAt:  TimeNull{Time: m.UpdatedAt, Valid: true},
+	}
+	// 序列化 permissions 为 JSON
+	if len(m.Permissions) > 0 {
+		if data, err := json.Marshal(m.Permissions); err == nil {
+			po.Permissions = string(data)
+		} else {
+			po.Permissions = "[]"
+		}
+	} else {
+		po.Permissions = "[]"
 	}
 	if m.ParentID != "" {
 		po.ParentID = sql.NullString{String: m.ParentID, Valid: true}

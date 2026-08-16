@@ -1,7 +1,5 @@
 package rbac
 
-import "strings"
-
 // RolePermission 角色权限值对象（权限由 Casbin 管理，此处仅保留领域模型）
 type RolePermission struct {
 	RoleID        string `json:"role_id"`
@@ -70,22 +68,39 @@ func DeriveMenus(permissions []string) []string {
 }
 
 // DeriveMenusFromMenus 根据权限列表和数据库菜单推导菜单 key 列表（去重）
-// 优先使用数据库中菜单的 Permission 字段进行匹配，fallback 到静态 PermissionMenuMap
+// 使用数据库中菜单的 Permissions 字段进行匹配，fallback 到静态 PermissionMenuMap
+// 没有配置任何权限的菜单（permissions 和 permission 均为空）默认可见
 func DeriveMenusFromMenus(permissions []string, menus []*Menu) []string {
-	// 构建 permission → menu_key 动态映射
+	// 构建 permission → menu_key 动态映射（使用 Permissions 数组）
 	permToMenu := make(map[string]string)
-	// 所有有效的菜单 key 集合，用于兜底匹配
-	menuKeySet := make(map[string]bool)
+	// 无需权限即可见的菜单集合
+	alwaysVisible := make(map[string]bool)
+
 	for _, m := range menus {
 		if m.Status {
-			if m.Permission != "" {
+			// 优先使用 Permissions 数组（包含 view + manage 等所有权限）
+			if len(m.Permissions) > 0 {
+				for _, p := range m.Permissions {
+					if p != "" {
+						permToMenu[p] = m.Key
+					}
+				}
+			} else if m.Permission != "" {
+				// 兼容：如果 Permissions 为空，使用旧的 Permission 单字段
 				permToMenu[m.Permission] = m.Key
+			} else {
+				// 没有配置任何权限的菜单，默认可见
+				alwaysVisible[m.Key] = true
 			}
-			menuKeySet[m.Key] = true
 		}
 	}
 
 	menuSet := make(map[string]bool)
+	// 添加默认可见的菜单
+	for key := range alwaysVisible {
+		menuSet[key] = true
+	}
+	// 根据用户权限匹配菜单
 	for _, perm := range permissions {
 		// 优先从数据库菜单映射查找
 		if menu, ok := permToMenu[perm]; ok {
@@ -93,12 +108,6 @@ func DeriveMenusFromMenus(permissions []string, menus []*Menu) []string {
 		} else if menu, ok := PermissionMenuMap[perm]; ok {
 			// fallback 到静态映射
 			menuSet[menu] = true
-		} else if idx := strings.LastIndex(perm, ":"); idx > 0 {
-			// 兜底：从 permission 中提取 key 前缀匹配菜单
-			// 如 "design-system:view" → "design-system"
-			if key := perm[:idx]; menuKeySet[key] {
-				menuSet[key] = true
-			}
 		}
 	}
 	result := make([]string, 0, len(menuSet))

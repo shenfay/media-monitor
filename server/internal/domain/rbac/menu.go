@@ -8,17 +8,18 @@ import (
 
 // Menu 菜单聚合根
 type Menu struct {
-	ID         string    `json:"id"`
-	Key        string    `json:"key"`
-	Label      string    `json:"label"`
-	Icon       string    `json:"icon"`
-	Path       string    `json:"path"`
-	Permission string    `json:"permission"`
-	ParentID   string    `json:"parent_id"`
-	SortOrder  int       `json:"sort_order"`
-	Status     bool      `json:"status"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID          string    `json:"id"`
+	Key         string    `json:"key"`
+	Label       string    `json:"label"`
+	Icon        string    `json:"icon"`
+	Path        string    `json:"path"`
+	Permission  string    `json:"permission"`  // 主权限标识（用于菜单可见性）
+	Permissions []string  `json:"permissions"` // 关联的所有 API 权限
+	ParentID    string    `json:"parent_id"`
+	SortOrder   int       `json:"sort_order"`
+	Status      bool      `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // NewMenu 创建新菜单
@@ -56,14 +57,15 @@ func (m *Menu) ToggleStatus() {
 
 // MenuTreeNode 菜单树节点（用于返回树形结构）
 type MenuTreeNode struct {
-	ID         string          `json:"id"`
-	Key        string          `json:"key"`
-	Label      string          `json:"label"`
-	Icon       string          `json:"icon"`
-	Path       string          `json:"path"`
-	Permission string          `json:"permission"`
-	ParentID   string          `json:"parent_id"`
-	SortOrder  int             `json:"sort_order"`
-	Status     bool            `json:"status"`
-	Children   []*MenuTreeNode `json:"children,omitempty"`
+	ID          string          `json:"id"`
+	Key         string          `json:"key"`
+	Label       string          `json:"label"`
+	Icon        string          `json:"icon"`
+	Path        string          `json:"path"`
+	Permission  string          `json:"permission"`
+	Permissions []string        `json:"permissions"`
+	ParentID    string          `json:"parent_id"`
+	SortOrder   int             `json:"sort_order"`
+	Status      bool            `json:"status"`
+	Children    []*MenuTreeNode `json:"children,omitempty"`
 }
