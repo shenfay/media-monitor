@@ -105,8 +105,8 @@ export default function ArticleManagement() {
     {
       title: t('actions'), key: 'actions', width: 110,
       render: (_: unknown, record: Article) => (
-        <Button type="link" size="small" onClick={() => handleViewDetail(record.id)}>
-          <EyeOutlined style={{ marginRight: 4 }} />{t('crawlView')}
+        <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
+          {t('crawlView')}
         </Button>
       ),
     },

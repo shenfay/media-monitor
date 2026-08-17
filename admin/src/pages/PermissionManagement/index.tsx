@@ -317,10 +317,10 @@ export default function PermissionManagement() {
         filters={
           <>
             <FilterSearch value={keyword} onChange={setKeyword} placeholder={t('searchRoleName')} />
-            <Button icon={<SearchOutlined />} style={{ color: 'var(--text-primary)' }}>{t('query')}</Button>
+            <Button icon={<SearchOutlined />}>{t('query')}</Button>
           </>
         }
-        toolbarActions={
+        extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRole}>
             {t('addRole')}
           </Button>

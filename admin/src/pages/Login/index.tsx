@@ -109,7 +109,7 @@ export default function Login() {
             backdropFilter: 'blur(10px)',
           }}
         >
-          K
+          C
         </div>
 
         <h1
@@ -121,7 +121,7 @@ export default function Login() {
             letterSpacing: 2,
           }}
         >
-          {t('appName')}
+          Content Collection Platform
         </h1>
 
         <p
@@ -134,9 +134,9 @@ export default function Login() {
             maxWidth: 360,
           }}
         >
-          {t('tagline')}
+          All-in-one Content Collection & Management
           <br />
-          {t('taglineSub')}
+          Make Information Collection Effortless
         </p>
 
         {/* 底部特性列表 */}
@@ -150,9 +150,9 @@ export default function Login() {
           }}
         >
           {[
-            { label: t('familyCollaboration'), value: t('multiRoleCollaboration') },
-            { label: t('growthRecord'), value: t('cardManagement') },
-            { label: t('goalIncentive'), value: t('pointsAndAcceptance') },
+            { label: 'Multi-source Collection', value: 'Multi-platform Coverage' },
+            { label: 'Smart Scheduling', value: 'Content Management' },
+            { label: 'Data Governance', value: 'Efficient Collaboration' },
           ].map(item => (
             <div key={item.label} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 4 }}>
@@ -187,10 +187,10 @@ export default function Login() {
                 margin: '0 0 8px',
               }}
             >
-              {t('welcomeBack')}
+              Welcome Back
             </h2>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
-              {t('loginSubtitle')}
+              Please login to your content collection account
             </p>
           </div>
 
@@ -206,7 +206,7 @@ export default function Login() {
             >
               <Input
                 prefix={<MailOutlined style={{ color: 'var(--text-icon)' }} />}
-                placeholder={t('email')}
+                placeholder="Email"
                 style={{ height: 44 }}
               />
             </Form.Item>
@@ -217,7 +217,7 @@ export default function Login() {
             >
               <Input.Password
                 prefix={<LockOutlined style={{ color: 'var(--text-icon)' }} />}
-                placeholder={t('password')}
+                placeholder="Password"
                 style={{ height: 44 }}
               />
             </Form.Item>
@@ -229,13 +229,13 @@ export default function Login() {
                 loading={loading}
                 block
               >
-                {t('login')}
+                Login
               </Button>
             </Form.Item>
           </Form>
 
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-icon)' }}>
-            {t('contactAdmin')}
+            Please contact admin for login credentials
           </div>
         </div>
       </div>

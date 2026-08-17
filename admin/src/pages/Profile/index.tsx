@@ -85,7 +85,7 @@ export default function Profile() {
                     <Input.TextArea rows={3} placeholder={t('bioPlaceholder')} />
                   </Form.Item>
                   <Alert type="info" showIcon message={t('profileEditHint')} style={{ marginBottom: 16 }} />
-                  <Button onClick={handleSaveProfile}>{t('saveChanges')}</Button>
+                  <Button type="primary" onClick={handleSaveProfile}>{t('saveChanges')}</Button>
                 </Form>
               </div>
             ),
@@ -126,7 +126,7 @@ export default function Profile() {
                     <Input.Password />
                   </Form.Item>
                   <Alert type="info" showIcon message={t('passwordNotAvailable')} style={{ marginBottom: 16 }} />
-                  <Button onClick={handleChangePassword}>{t('changePassword')}</Button>
+                  <Button type="primary" onClick={handleChangePassword}>{t('changePassword')}</Button>
                 </Form>
               </div>
             ),
@@ -155,7 +155,7 @@ export default function Profile() {
                       {t('smsNotifyDesc')}
                     </div>
                   </Form.Item>
-                  <Button onClick={() => message.info(t('notifyNotAvailable'))}>{t('saveSettings')}</Button>
+                  <Button type="primary" onClick={() => message.info(t('notifyNotAvailable'))}>{t('saveSettings')}</Button>
                 </Form>
               </div>
             ),

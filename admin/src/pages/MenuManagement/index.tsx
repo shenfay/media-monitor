@@ -240,10 +240,10 @@ export default function MenuManagement() {
         filters={
           <>
             <FilterSearch value={keyword} onChange={setKeyword} placeholder={t('searchMenuName')} />
-            <Button icon={<SearchOutlined />} style={{ color: 'var(--text-primary)' }}>{t('query')}</Button>
+            <Button icon={<SearchOutlined />}>{t('query')}</Button>
           </>
         }
-        toolbarActions={
+        extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRoot}>
             {t('addMenu')}
           </Button>

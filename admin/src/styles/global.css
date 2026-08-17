@@ -306,7 +306,7 @@ body {
 
 /* 链接型按钮颜色 — 排除危险操作 */
 .ant-btn-link:not(.ant-btn-dangerous) {
-  color: var(--blue) !important;
+  color: #3d5a80 !important;
 }
 
 /* 通用操作按钮组分隔线 */

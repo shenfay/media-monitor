@@ -174,10 +174,10 @@ export default function UserManagement() {
                 ...roles.map(r => ({ label: r.name, value: r.id })),
               ]}
             />
-            <Button icon={<SearchOutlined />} style={{ color: 'var(--text-primary)' }} onClick={() => fetchUsers()}>{t('query')}</Button>
+            <Button icon={<SearchOutlined />} onClick={() => fetchUsers()}>{t('query')}</Button>
           </>
         }
-        toolbarActions={
+        extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             {t('addUser')}
           </Button>
