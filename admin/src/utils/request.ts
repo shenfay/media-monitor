@@ -2,6 +2,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestCo
 import { message } from 'antd'
 import i18n from '@/locales'
 import type { ApiResponse } from '@/types'
+import { doRefreshToken, enqueueRequest, getIsRefreshing } from './tokenRefresh'
 
 // 扩展 axios config 以支持静默模式（跳过全局错误提示）
 declare module 'axios' {
@@ -55,6 +56,19 @@ request.interceptors.request.use(
 )
 
 // 响应拦截器
+
+/** 统一处理登录跳转：清理状态 + 跳转登录页 */
+function redirectToLogin(msg?: string) {
+  message.error(msg || i18n.t('sessionExpired'))
+  localStorage.removeItem('admin-token')
+  localStorage.removeItem('admin-refresh-token')
+  // 延迟导入避免循环依赖
+  import('@/stores').then(({ useUserStore }) => {
+    useUserStore.getState().logout()
+  })
+  window.location.href = '/login'
+}
+
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     // 检查是否为标准 ApiResponse 结构（含 code + data 字段）
@@ -79,15 +93,32 @@ request.interceptors.response.use(
         if (window.location.pathname === '/login') {
           return Promise.reject(error)
         }
-        message.error(msg || i18n.t('sessionExpired'))
-        // 统一清理：localStorage + Zustand store
-        localStorage.removeItem('admin-token')
-        localStorage.removeItem('admin-refresh-token')
-        // 延迟导入避免循环依赖
-        import('@/stores').then(({ useUserStore }) => {
-          useUserStore.getState().logout()
-        })
-        window.location.href = '/login'
+
+        const originalConfig = error.config as AxiosRequestConfig & { _retried?: boolean }
+        const refreshToken = localStorage.getItem('admin-refresh-token')
+
+        // 有 refresh token 且未重试过 → 尝试自动刷新
+        if (refreshToken && originalConfig && !originalConfig._retried) {
+          originalConfig._retried = true
+
+          if (getIsRefreshing()) {
+            // 已有刷新请求进行中，排队等待
+            return enqueueRequest(originalConfig)
+          }
+
+          return doRefreshToken().then(success => {
+            if (success) {
+              // 刷新成功，用新 token 重试原请求
+              return request(originalConfig)
+            }
+            // 刷新失败，跳转登录页
+            redirectToLogin(msg)
+            return Promise.reject(error)
+          })
+        }
+
+        // 无 refresh token 或已重试过 → 直接跳转登录
+        redirectToLogin(msg)
       } else {
         // 直接使用后端返回的中文消息
         message.error(msg || `${i18n.t('error')} (${status})`)

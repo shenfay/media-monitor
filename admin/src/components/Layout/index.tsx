@@ -7,6 +7,7 @@ import PageContainer from './PageContainer'
 import { useUserStore } from '@/stores'
 import { getUserMenuTree, getPermissions } from '@/services/auth'
 import { cancelAllRequests } from '@/utils/request'
+import { scheduleProactiveRefresh, clearProactiveRefresh } from '@/utils/tokenRefresh'
 import { useWebSocketInit } from '@/hooks/useWebSocket'
 import type { ReactNode } from 'react'
 
@@ -60,6 +61,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
         .catch(() => {
           // 获取失败静默处理
         })
+
+      // 启动 token 主动刷新（根据 JWT 过期时间提前续期）
+      const token = localStorage.getItem('admin-token')
+      if (token) scheduleProactiveRefresh(token)
+    } else {
+      clearProactiveRefresh()
     }
   }, [isLogin, setMenuTree, updatePermissions])
 

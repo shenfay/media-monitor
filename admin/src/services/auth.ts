@@ -28,3 +28,8 @@ export async function getUserMenuTree(): Promise<MenuItem[]> {
 export async function logout() {
   return request.post('/v1/auth/logout')
 }
+
+/** 刷新 Access Token */
+export async function refreshToken(refresh_token: string): Promise<LoginResponse> {
+  return request.post('/v1/auth/refresh', { refresh_token })
+}

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useUserStore } from '@/stores'
 import { login as loginApi, getUserMenuTree } from '@/services/auth'
 import { getEmailRules, getPasswordRules } from '@/utils/formRules'
+import { scheduleProactiveRefresh } from '@/utils/tokenRefresh'
 import type { LoginRequest } from '@/types'
 
 export default function Login() {
@@ -27,6 +28,9 @@ export default function Login() {
         token: res.access_token,
         refreshToken: res.refresh_token,
       })
+
+      // 登录成功后立即调度 token 主动刷新
+      scheduleProactiveRefresh(res.access_token)
 
       // 登录后获取用户菜单树
       try {
