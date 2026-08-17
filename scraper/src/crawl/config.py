@@ -21,6 +21,7 @@ DEFAULTS = {
     "MM_WORKER_NAME": "",
     "MM_HEARTBEAT_INTERVAL": "20",
     "MM_HEARTBEAT_TTL": "60",
+    "MM_DATABASE_DSN": "",
 }
 
 
@@ -43,6 +44,7 @@ class Settings:
     worker_name = get("MM_WORKER_NAME") or ""
     heartbeat_interval = int(get("MM_HEARTBEAT_INTERVAL") or 20)
     heartbeat_ttl = int(get("MM_HEARTBEAT_TTL") or 60)
+    database_dsn = get("MM_DATABASE_DSN") or ""
 
 
 settings = Settings()
