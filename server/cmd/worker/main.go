@@ -96,12 +96,10 @@ func main() {
 		DB:       cfg.Redis.DB,
 	}, crawlSvc)
 
-	// Stream 消费者：消费 Python Worker 回传的文章和事件
+	// Stream 消费者：消费 Python Worker 回传的文章和事件（含单实例锁、心跳、看门狗）
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 	defer workerCancel()
-	go crawlSvc.StartArticleConsumer(workerCtx)
-	go crawlSvc.StartEventConsumer(workerCtx)
-	logger.Info("Stream consumers started (article + event)")
+	crawlSvc.StartConsumers(workerCtx)
 
 	// 从事件注册表获取所有路由到 logs 队列的事件类型（单一真相来源）
 	for _, eventName := range messaging.LogEventTypes() {
