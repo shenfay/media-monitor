@@ -50,15 +50,21 @@ func NewWorkerRegistry(rdb *redis.Client) *WorkerRegistry {
 	return &WorkerRegistry{rdb: rdb}
 }
 
-// ListWorkers 从 Redis 读取所有 Worker 实例
+// ListWorkers 从 Redis 读取所有 Worker 实例（含 Go consumer 虚拟节点）
 func (r *WorkerRegistry) ListWorkers(ctx context.Context) ([]WorkerInfo, error) {
-	// 获取所有 worker ID
+	// 获取 Python worker ID
 	ids, err := r.rdb.SMembers(ctx, workerIDsKey).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get worker IDs: %w", err)
 	}
 
-	workers := make([]WorkerInfo, 0, len(ids))
+	workers := make([]WorkerInfo, 0, len(ids)+1)
+
+	// 读取 Go consumer 心跳，作为虚拟 worker 加入列表
+	if goWorker := r.readGoConsumerHeartbeat(ctx); goWorker != nil {
+		workers = append(workers, *goWorker)
+	}
+
 	for _, id := range ids {
 		key := workerKeyPrefix + id
 		data, err := r.rdb.HGetAll(ctx, key).Result()
@@ -157,6 +163,41 @@ func (r *WorkerRegistry) SendCommand(ctx context.Context, workerID, action strin
 		return err
 	}
 	return r.rdb.Publish(ctx, controlChannel, payload).Err()
+}
+
+// readGoConsumerHeartbeat 读取 Go consumer 心跳，转换为 WorkerInfo。
+// 如果心跳不存在或已过期则返回 nil。
+func (r *WorkerRegistry) readGoConsumerHeartbeat(ctx context.Context) *WorkerInfo {
+	data, err := r.rdb.HGetAll(ctx, consumerHeartbeatKey).Result()
+	if err != nil || len(data) == 0 {
+		return nil
+	}
+	ttl := r.rdb.TTL(ctx, consumerHeartbeatKey).Val()
+	status := data["status"]
+	if ttl <= 0 {
+		status = "offline"
+	}
+	var lastHB time.Time
+	if ts := data["last_heartbeat"]; ts != "" {
+		var unix int64
+		fmt.Sscanf(ts, "%d", &unix)
+		if unix > 0 {
+			lastHB = time.Unix(unix, 0)
+		}
+	}
+	var processed int64
+	fmt.Sscanf(data["articles_processed"], "%d", &processed)
+	return &WorkerInfo{
+		ID:             "go-consumer",
+		Name:           "Go Stream Consumer",
+		Adapters:       []string{},
+		Capabilities:   []string{"article-ingest", "event-consumer"},
+		Status:         status,
+		Concurrency:    1,
+		CurrentTask:    "",
+		ProcessedCount: processed,
+		LastHeartbeat:  lastHB,
+	}
 }
 
 // PublishConfigChanged 发布配置变更通知（Worker 收到后重新计算流列表）
