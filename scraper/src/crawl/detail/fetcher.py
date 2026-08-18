@@ -5,6 +5,11 @@
 2. 按 adapter_name 查找对应适配器
 3. 调用 adapter.fetch_detail() 抓取正文
 4. 将结果通过 crawl:article:ingest (phase=detail) 回传
+
+可靠性：
+- 启动时注册到 Redis（WorkerRegistration），心跳保活
+- 管理面板可查看 detail worker 状态
+- 退出时自动注销
 """
 from __future__ import annotations
 
@@ -15,13 +20,14 @@ import time
 import redis
 
 from crawl import config
-from crawl.adapters.registry import _REGISTRY
+from crawl.adapters.registry import _REGISTRY, get_all_required_tags, list_metadata
 from crawl.cleaning.normalizer import normalize_article
 from crawl.cleaning.validator import validate_article
 from crawl.contracts.article import Article
 from crawl.contracts.detail_task import DetailTask, DetailTaskBatch
 from crawl.contracts.source import Source
 from crawl.streams.publisher import ArticlePublisher
+from crawl.worker.registration import WorkerRegistration
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +49,8 @@ class DetailFetcher:
         self._consumer = consumer_name or config.settings.consumer_name
         self._delay = delay
         self._conn: redis.Redis | None = None
+        self._registration: WorkerRegistration | None = None
+        self._processed_count = 0
 
     @property
     def conn(self) -> redis.Redis:
@@ -61,44 +69,73 @@ class DetailFetcher:
             else:
                 raise
 
+    def _register_worker(self) -> None:
+        """注册到 Redis，启动心跳。"""
+        adapters_meta = list(list_metadata().values())
+        capabilities = get_all_required_tags()
+        # 标记自身为 detail-worker，供看门狗识别
+        capabilities = list(set(capabilities) | {"detail-worker"})
+
+        self._registration = WorkerRegistration(
+            adapters_metadata=adapters_meta,
+            capabilities=capabilities,
+            concurrency=1,
+        )
+        self._registration.register()
+        self._registration.start_heartbeat()
+        logger.info(
+            "Detail worker registered: id=%s capabilities=%s",
+            self._registration.worker_id, capabilities,
+        )
+
     def run(self) -> None:
         """启动消费循环。"""
         self._ensure_group()
+
+        # 注册 worker 并启动心跳
+        self._register_worker()
+
         logger.info(
             "DetailFetcher started: stream=%s group=%s consumer=%s delay=%.1fs",
             self._stream, self._group, self._consumer, self._delay,
         )
 
-        # 先处理积压的 pending 消息
-        self._consume_pending()
+        try:
+            # 先处理积压的 pending 消息
+            self._consume_pending()
 
-        # 持续消费新消息
-        while True:
-            try:
-                results = self.conn.xreadgroup(
-                    groupname=self._group,
-                    consumername=self._consumer,
-                    streams={self._stream: ">"},
-                    count=5,
-                    block=5000,
-                )
-                if not results:
-                    continue
+            # 持续消费新消息
+            while True:
+                try:
+                    results = self.conn.xreadgroup(
+                        groupname=self._group,
+                        consumername=self._consumer,
+                        streams={self._stream: ">"},
+                        count=5,
+                        block=5000,
+                    )
+                    if not results:
+                        continue
 
-                for _stream_name, messages in results:
-                    for msg_id, fields in messages:
-                        try:
-                            self._handle_message(fields)
-                            self.conn.xack(self._stream, self._group, msg_id)
-                        except Exception:
-                            logger.exception("Failed to handle message %s", msg_id)
-            except redis.ConnectionError:
-                logger.warning("Redis connection lost, reconnecting in 5s...")
-                time.sleep(5)
-                self._conn = None
-            except KeyboardInterrupt:
-                logger.info("DetailFetcher shutting down (keyboard interrupt)")
-                break
+                    for _stream_name, messages in results:
+                        for msg_id, fields in messages:
+                            try:
+                                self._handle_message(fields)
+                                self.conn.xack(self._stream, self._group, msg_id)
+                            except Exception:
+                                logger.exception("Failed to handle message %s", msg_id)
+                except redis.ConnectionError:
+                    logger.warning("Redis connection lost, reconnecting in 5s...")
+                    time.sleep(5)
+                    self._conn = None
+                except KeyboardInterrupt:
+                    logger.info("DetailFetcher shutting down (keyboard interrupt)")
+                    break
+        finally:
+            # 退出时注销 worker
+            if self._registration:
+                self._registration.deregister()
+                logger.info("Detail worker deregistered")
 
     def _consume_pending(self) -> None:
         """处理积压的 pending 消息（之前未 ACK 的）。"""
@@ -199,6 +236,7 @@ class DetailFetcher:
                     source_id=batch.source_id,
                     articles=results,
                 )
+                self._processed_count += len(results)
                 logger.info(
                     "Published %d detail results (%d articles) for task=%s",
                     batches, len(results), batch.task_id,
@@ -207,6 +245,13 @@ class DetailFetcher:
                 publisher.close()
         else:
             logger.info("No content extracted for task=%s", batch.task_id)
+
+        # 更新 worker 状态（心跳续期 + 计数上报）
+        if self._registration:
+            self._registration.update_status(
+                current_task=batch.task_id,
+                processed_count=self._processed_count,
+            )
 
 
 def normalize_articles(articles: list[Article]) -> list[Article]:
