@@ -1,6 +1,10 @@
 """ArticlePublisher — 分批 XADD crawl:article:ingest。
 
 将文章列表/详情分批发送到 Go 侧消费，每批 ≤ batch_size 篇。
+
+DetailTaskPublisher — 分批 XADD crawl:detail:queue。
+
+将详情抓取任务分批发送到详情队列，由独立的 DetailFetcher 消费。
 """
 from __future__ import annotations
 
@@ -11,6 +15,7 @@ import redis
 
 from crawl import config
 from crawl.contracts.article import Article, ArticleBatch
+from crawl.contracts.detail_task import DetailTask, DetailTaskBatch
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +126,81 @@ class ArticlePublisher:
             maxlen=self._max_stream_len,
             approximate=True,
         )
+
+    def close(self) -> None:
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None
+
+
+class DetailTaskPublisher:
+    """分批发布详情任务到 crawl:detail:queue Stream。"""
+
+    def __init__(
+        self,
+        redis_url: str | None = None,
+        stream: str | None = None,
+        max_batch: int | None = None,
+        max_stream_len: int | None = None,
+    ):
+        self._redis_url = redis_url or config.settings.redis_url
+        self._stream = stream or config.settings.detail_queue
+        self._max_batch = max_batch or config.settings.batch_size
+        self._max_stream_len = max_stream_len or config.settings.max_stream_len
+        self._conn: redis.Redis | None = None
+
+    @property
+    def conn(self) -> redis.Redis:
+        if self._conn is None:
+            self._conn = redis.Redis.from_url(self._redis_url, decode_responses=True)
+        return self._conn
+
+    def publish(
+        self,
+        task_id: str,
+        source_id: str,
+        adapter_name: str,
+        articles: list[Article],
+    ) -> int:
+        """将文章列表转为详情任务，分批 XADD，返回发送批次数。"""
+        if not articles:
+            return 0
+
+        tasks = [
+            DetailTask(
+                source_id=a.source_id,
+                platform=a.platform,
+                url=a.url,
+                external_id=a.external_id,
+                title=a.title,
+                adapter_name=adapter_name,
+            )
+            for a in articles
+        ]
+
+        batches_sent = 0
+        for i in range(0, len(tasks), self._max_batch):
+            chunk = tasks[i : i + self._max_batch]
+            batch = DetailTaskBatch(
+                task_id=task_id,
+                source_id=source_id,
+                adapter_name=adapter_name,
+                tasks=chunk,
+            )
+            payload = json.dumps(batch.to_dict(), ensure_ascii=False)
+            self.conn.xadd(
+                self._stream,
+                {"payload": payload},
+                maxlen=self._max_stream_len,
+                approximate=True,
+            )
+            batches_sent += 1
+
+        logger.info(
+            "Published %d detail task batches for task=%s source=%s (%d tasks)",
+            batches_sent, task_id, source_id, len(tasks),
+        )
+        return batches_sent
 
     def close(self) -> None:
         if self._conn is not None:

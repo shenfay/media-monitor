@@ -11,6 +11,7 @@ DEFAULTS = {
     "MM_DISPATCH_STREAM": "crawl:task:dispatch",
     "MM_ARTICLE_STREAM": "crawl:article:ingest",
     "MM_EVENT_STREAM": "crawl:task:event",
+    "MM_DETAIL_QUEUE": "crawl:detail:queue",
     "MM_CONSUMER_GROUP": "crawl:worker",
     "MM_CONSUMER_NAME": "scraper-1",
     "MM_HTTP_TIMEOUT": "20",
@@ -34,6 +35,7 @@ class Settings:
     dispatch_stream = get("MM_DISPATCH_STREAM")
     article_stream = get("MM_ARTICLE_STREAM")
     event_stream = get("MM_EVENT_STREAM")
+    detail_queue = get("MM_DETAIL_QUEUE")
     consumer_group = get("MM_CONSUMER_GROUP")
     consumer_name = get("MM_CONSUMER_NAME")
     http_timeout = float(get("MM_HTTP_TIMEOUT") or 20)

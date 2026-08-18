@@ -1,10 +1,11 @@
 """CLI 入口（typer）。
 
 子命令：
-- serve:   常驻消费 Redis Stream（生产用）
-- run:     直跑某个 source（本地测试用）
-- history: 历史数据回刷（从 DB 读配置，深度翻页，经 Stream 入库）
-- health:  健康检查（Docker HEALTHCHECK 用）
+- serve:          常驻消费 Redis Stream（生产用）
+- run:            直跑某个 source（本地测试用）
+- history:        历史数据回刷（从 DB 读配置，深度翻页，经 Stream 入库）
+- detail-worker:  详情抓取 Worker（消费 crawl:detail:queue，抓取正文后回传）
+- health:         健康检查（Docker HEALTHCHECK 用）
 """
 from __future__ import annotations
 
@@ -231,7 +232,8 @@ def history(
     start_offset: int = typer.Option(0, help="起始 offset，用于断点续传"),
     per_node: bool = typer.Option(False, "--per-node", help="逐子节点查询，每个子节点独立翻页（绕过 offset=10000 限制）"),
     no_source_filter: bool = typer.Option(False, "--no-source-filter", help="清空 source_filter，抓取所有来源的文章"),
-    with_body: bool = typer.Option(False, help="是否抓取正文"),
+    with_body: bool = typer.Option(False, help="是否同步抓取正文（内联模式）"),
+    async_body: bool = typer.Option(False, "--async-body", help="异步详情模式：列表入库后发布详情任务到 crawl:detail:queue，由 detail-worker 消费"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Debug 日志"),
 ) -> None:
     """历史数据回刷：从数据库读取数据源配置，深度翻页抓取，经 Stream 管道写入数据库。"""
@@ -319,7 +321,7 @@ def history(
     )
 
     # ── 2. 深度翻页抓取（边翻边写） ──────────────────────
-    from crawl.adapters.huanqiu_history.adapter import HuanqiuHistoryAdapter
+    from crawl.adapters.huanqiu.history import HuanqiuHistoryAdapter
     from crawl.cleaning.normalizer import normalize_article
     from crawl.cleaning.validator import validate_article
     from crawl.streams.publisher import ArticlePublisher
@@ -363,9 +365,9 @@ def history(
         logger.info("无有效文章，退出")
         return
 
-    # ── 3. 可选：抓取正文 ─────────────────────────────────
+    # ── 3. 可选：抓取正文（同步内联模式） ───────────────────
     if with_body:
-        logger.info("开始抓取正文...")
+        logger.info("开始同步抓取正文...")
         detail_ok = 0
         detail_fail = 0
         for a in all_articles:
@@ -382,6 +384,22 @@ def history(
                 detail_fail += 1
         logger.info("正文完成: 成功 %d, 失败 %d", detail_ok, detail_fail)
 
+    # ── 3b. 可选：异步详情模式（发布到详情队列） ─────────────
+    if async_body:
+        from crawl.streams.publisher import DetailTaskPublisher
+        logger.info("发布详情任务到 crawl:detail:queue ...")
+        detail_publisher = DetailTaskPublisher()
+        try:
+            batches = detail_publisher.publish(
+                task_id=task_id,
+                source_id=src.id,
+                adapter_name="huanqiu_history",
+                articles=all_articles,
+            )
+            logger.info("已发布 %d 批详情任务 (%d 篇文章)", batches, len(all_articles))
+        finally:
+            detail_publisher.close()
+
     # ── 4. 汇总 ──────────────────────────────────────────
     dates = [a.published_at for a in all_articles if a.published_at]
     logger.info("=" * 50)
@@ -394,6 +412,36 @@ def history(
         logger.info("  日期范围: %s ~ %s", min(dates), max(dates))
     logger.info("  task_id:  %s", task_id)
     logger.info("=" * 50)
+
+
+@app.command()
+def detail_worker(
+    delay: float = typer.Option(0.5, help="每篇请求间隔秒数"),
+    consumer_name: str = typer.Option("", help="消费者名称（默认使用配置中的 MM_CONSUMER_NAME）"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Debug 日志"),
+) -> None:
+    """详情抓取 Worker：消费 crawl:detail:queue，抓取正文后回传。
+
+    独立运行，与列表抓取完全解耦。可启动多个实例并行消费。
+    """
+    _setup_logging(verbose)
+    logger = logging.getLogger("crawl.detail_worker")
+
+    # 触发适配器自动注册
+    import crawl.adapters  # noqa: F401
+
+    from crawl.detail.fetcher import DetailFetcher
+
+    kwargs = {"delay": delay}
+    if consumer_name:
+        kwargs["consumer_name"] = consumer_name
+
+    fetcher = DetailFetcher(**kwargs)
+    logger.info("Starting detail worker with delay=%.1fs", delay)
+    try:
+        fetcher.run()
+    except KeyboardInterrupt:
+        logger.info("Detail worker shutting down...")
 
 
 @app.command()
