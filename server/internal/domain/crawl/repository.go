@@ -34,6 +34,8 @@ type ArticleFilter struct {
 type ArticleRepository interface {
 	// UpsertBatch 批量 upsert，幂等键为 (source_id, url_hash)
 	UpsertBatch(ctx context.Context, articles []*Article) (int, error)
+	// UpsertDetailBatch 仅更新正文相关字段（body, status, fetched_at, raw_payload）
+	UpsertDetailBatch(ctx context.Context, articles []*Article) (int, error)
 	// List 按过滤条件分页查询
 	List(ctx context.Context, filter ArticleFilter) ([]*Article, int, error)
 	// FindByID 按 ID 查询单篇文章

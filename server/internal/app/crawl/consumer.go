@@ -111,7 +111,15 @@ func (s *Service) handleArticleMessage(ctx context.Context, msg redis.XMessage) 
 	}
 
 	if len(arts) > 0 {
-		if _, err := s.articles.UpsertBatch(ctx, arts); err != nil {
+		var err error
+		if ingest.Phase == "detail" {
+			// detail 阶段仅更新正文相关字段，不覆盖列表阶段的元数据
+			_, err = s.articles.UpsertDetailBatch(ctx, arts)
+		} else {
+			// list 阶段更新全部字段
+			_, err = s.articles.UpsertBatch(ctx, arts)
+		}
+		if err != nil {
 			return err
 		}
 	}

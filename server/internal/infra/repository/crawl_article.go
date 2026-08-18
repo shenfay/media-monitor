@@ -32,7 +32,7 @@ type articlePO struct {
 	SourceName   string     `gorm:"column:source_name;size:200"`
 	PublishedAt  *time.Time `gorm:"column:published_at"`
 	Language     string     `gorm:"size:20"`
-	Status       string     `gorm:"size:20;default:'pending'"`
+	Status       string     `gorm:"size:20"`
 	Interactions string     `gorm:"type:text"`
 	Media        string     `gorm:"type:text"`
 	ThreadID     *string    `gorm:"column:thread_id;type:varchar(100)"`
@@ -127,7 +127,8 @@ func NewCrawlArticleRepository(db *gorm.DB) crawl.ArticleRepository {
 	return &articleRepository{db: db}
 }
 
-// UpsertBatch 批量 upsert，幂等键为 (source_id, url_hash)；冲突时更新正文/状态等字段
+// UpsertBatch 批量 upsert（列表阶段），幂等键为 (source_id, url_hash)；
+// 冲突时更新元数据字段，但不覆盖 body（正文由 detail 阶段单独写入）
 func (r *articleRepository) UpsertBatch(ctx context.Context, articles []*crawl.Article) (int, error) {
 	if len(articles) == 0 {
 		return 0, nil
@@ -138,9 +139,36 @@ func (r *articleRepository) UpsertBatch(ctx context.Context, articles []*crawl.A
 			if err := tx.Clauses(clause.OnConflict{
 				Columns: []clause.Column{{Name: "source_id"}, {Name: "url_hash"}},
 				DoUpdates: clause.AssignmentColumns([]string{
-					"title", "subtitle", "summary", "body", "body_format",
+					"title", "subtitle", "summary", "body_format",
 					"channel", "author", "source_name", "published_at", "language",
 					"status", "interactions", "media", "thread_id", "raw_payload", "fetched_at", "updated_at",
+				}),
+			}).Create(&po).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return len(articles), nil
+}
+
+// UpsertDetailBatch 详情阶段 upsert：更新全部字段（详情页数据更权威）
+func (r *articleRepository) UpsertDetailBatch(ctx context.Context, articles []*crawl.Article) (int, error) {
+	if len(articles) == 0 {
+		return 0, nil
+	}
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, a := range articles {
+			po := articleFromDomain(a)
+			if err := tx.Clauses(clause.OnConflict{
+				Columns: []clause.Column{{Name: "source_id"}, {Name: "url_hash"}},
+				DoUpdates: clause.AssignmentColumns([]string{
+					"title", "subtitle", "body", "body_format",
+					"author", "source_name", "published_at",
+					"status", "media", "raw_payload", "fetched_at", "updated_at",
 				}),
 			}).Create(&po).Error; err != nil {
 				return err
