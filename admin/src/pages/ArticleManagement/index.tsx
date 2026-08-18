@@ -29,7 +29,8 @@ export default function ArticleManagement() {
   const [detailArticle, setDetailArticle] = useState<Article | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
-  const sourceMap = Object.fromEntries(sources.map(s => [s.id, s.name]))
+  // 数据源名称去掉"-频道"后缀（如"环球网-产业新闻"→"环球网"）
+  const sourceMap = Object.fromEntries(sources.map(s => [s.id, s.name?.split('-')[0] || s.name]))
 
   const fetchData = useCallback(async () => {
     setLoading(true)
