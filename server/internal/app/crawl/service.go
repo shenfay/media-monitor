@@ -355,6 +355,59 @@ func computeURLHashForArticle(url string) string {
 
 func strPtr(s string) *string { return &s }
 
+// ─── 队列状态 ────────────────────────────────────────────────────────────────
+
+// StreamStatus 单个 Stream 的状态
+type StreamStatus struct {
+	Length    int64 `json:"length"`    // stream 总长度
+	Pending   int64 `json:"pending"`   // 已读未 ACK 数
+	Consumers int64 `json:"consumers"` // 消费者数
+	Lag       int64 `json:"lag"`       // 未读消息数
+}
+
+// QueueStatus 所有抓取队列状态
+type QueueStatus struct {
+	DispatchQueue StreamStatus `json:"dispatch_queue"`
+	DetailQueue   StreamStatus `json:"detail_queue"`
+	IngestQueue   StreamStatus `json:"ingest_queue"`
+}
+
+// GetQueueStatus 返回各队列深度（调用 Redis XINFO GROUPS）。
+func (s *Service) GetQueueStatus(ctx context.Context) (*QueueStatus, error) {
+	qs := &QueueStatus{}
+	qs.DispatchQueue, _ = s.streamStatus(ctx, s.cfg.Stream, "")
+	qs.DetailQueue, _ = s.streamStatus(ctx, s.cfg.DetailQueue, "crawl:detail:worker")
+	qs.IngestQueue, _ = s.streamStatus(ctx, s.cfg.ArticleStream, articleConsumerGroup)
+	return qs, nil
+}
+
+// streamStatus 查询单个 stream 的状态。
+func (s *Service) streamStatus(ctx context.Context, stream, group string) (StreamStatus, error) {
+	status := StreamStatus{}
+	length, err := s.redis.XLen(ctx, stream).Result()
+	if err != nil {
+		// stream 不存在时返回零值
+		return status, nil
+	}
+	status.Length = length
+
+	if group != "" {
+		groups, err := s.redis.XInfoGroups(ctx, stream).Result()
+		if err != nil {
+			return status, nil
+		}
+		for _, g := range groups {
+			if g.Name == group {
+				status.Pending = g.Pending
+				status.Consumers = g.Consumers
+				status.Lag = g.Lag
+				break
+			}
+		}
+	}
+	return status, nil
+}
+
 // notifyConfigChanged 发布配置变更通知，Worker 收到后重新计算流列表
 func (s *Service) notifyConfigChanged(ctx context.Context) {
 	_ = s.redis.Publish(ctx, configChannel, `{"action":"source_changed"}`).Err()

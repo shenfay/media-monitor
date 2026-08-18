@@ -37,6 +37,7 @@ func (h *CrawlHandler) RegisterAdminRoutes(rg *gin.RouterGroup) {
 	rg.GET("/articles", h.ListArticles)
 	rg.GET("/articles/:id", h.GetArticle)
 	rg.GET("/dashboard/stats", h.DashboardStats)
+	rg.GET("/queue-status", h.GetQueueStatus)
 }
 
 // ListSources GET /api/v1/admin/crawl/sources
@@ -256,4 +257,17 @@ func (h *CrawlHandler) DashboardStats(c *gin.Context) {
 		return
 	}
 	response.Success(c, stats)
+}
+
+// GetQueueStatus GET /api/v1/admin/crawl/queue-status
+// @Summary 获取抓取队列状态（Redis Stream 深度）
+// @Tags Crawl
+// @Security BearerAuth
+func (h *CrawlHandler) GetQueueStatus(c *gin.Context) {
+	qs, err := h.svc.GetQueueStatus(c.Request.Context())
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Success(c, qs)
 }

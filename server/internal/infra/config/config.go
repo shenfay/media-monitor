@@ -145,6 +145,7 @@ type ScraperConfig struct {
 	Stream        string `mapstructure:"stream"`         // Redis Stream 任务分发队列名，默认 crawl:task:dispatch
 	ArticleStream string `mapstructure:"article_stream"` // Redis Stream 文章回传队列名，默认 crawl:article:ingest
 	EventStream   string `mapstructure:"event_stream"`   // Redis Stream 事件回传队列名，默认 crawl:task:event
+	DetailQueue   string `mapstructure:"detail_queue"`   // Redis Stream 详情抓取队列名，默认 crawl:detail:queue
 	ConsumerGroup string `mapstructure:"consumer_group"` // Stream 消费者组名，默认 crawl:go
 }
 
@@ -343,6 +344,7 @@ func setDefaults() {
 	viper.SetDefault("scraper.stream", "crawl:task:dispatch")
 	viper.SetDefault("scraper.article_stream", "crawl:article:ingest")
 	viper.SetDefault("scraper.event_stream", "crawl:task:event")
+	viper.SetDefault("scraper.detail_queue", "crawl:detail:queue")
 	viper.SetDefault("scraper.consumer_group", "crawl:go")
 	viper.SetDefault("rate_limit.register.rate", 10)
 	viper.SetDefault("rate_limit.register.burst", 20)
