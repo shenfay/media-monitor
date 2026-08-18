@@ -12,6 +12,8 @@ def normalize_article(article: Article) -> Article:
     """标准化一篇文章（原地修改并返回）。"""
     article.url = normalize_url(article.url)
     article.title = clean_title(article.title)
+    article.author = clean_author(article.author)
+    article.source_name = clean_source_name(article.source_name)
     article.summary = clean_text(article.summary)
     article.content = clean_text(article.content)
     article.published_at = normalize_timestamp(article.published_at)
@@ -56,6 +58,22 @@ def clean_text(text: str) -> str:
     if not text:
         return ""
     return re.sub(r"\s+", " ", text).strip()
+
+
+def clean_author(author: str) -> str:
+    """清理作者名：去除“作者：”前缀、多余空白。"""
+    if not author:
+        return ""
+    author = re.sub(r'^作者[：:]\s*', '', author).strip()
+    return author
+
+
+def clean_source_name(name: str) -> str:
+    """清理来源名：去除 HTML 标签（如 <a href=...>环球网</a> → 环球网）。"""
+    if not name:
+        return ""
+    name = re.sub(r'<[^>]+>', '', name).strip()
+    return name
 
 
 def normalize_timestamp(ts: str) -> str:

@@ -116,9 +116,47 @@ class HuanqiuAdapter(BaseAdapter):
             page = get_text_auto(article.url, headers=MOBILE_UA)
         except Exception:
             return article
-        match = re.search(
-            r'<textarea[^>]*class="article-content"[^>]*>(.*?)</textarea>', page, re.S
-        )
-        if match:
-            article.content = html.unescape(match.group(1))
+
+        # 辅助：从 <textarea class="xxx"> 提取值
+        def _textarea(cls: str) -> str:
+            m = re.search(
+                rf'<textarea[^>]*class="{cls}"[^>]*>(.*?)</textarea>',
+                page, re.S,
+            )
+            return m.group(1).strip() if m else ""
+
+        # 正文
+        content = _textarea("article-content")
+        if content:
+            article.content = html.unescape(content)
+
+        # 元数据（详情页数据更权威，覆盖列表阶段）
+        title = _textarea("article-title")
+        if title:
+            article.title = title
+
+        subtitle = _textarea("article-subtitle")
+        if subtitle:
+            article.subtitle = subtitle
+
+        author = _textarea("article-author")
+        if author:
+            # 清理 "作者：" / "作者:" 前缀
+            author = re.sub(r'^作者[：:]\s*', '', author).strip()
+            article.author = author
+
+        source_name = _textarea("article-source-name")
+        if source_name:
+            article.source_name = source_name
+
+        time_str = _textarea("article-time")
+        if time_str and time_str.isdigit():
+            article.published_at = iso_from_ms(int(time_str))
+
+        cover = _textarea("article-cover")
+        if cover:
+            if cover.startswith("//"):
+                cover = "https:" + cover
+            article.images = [cover]
+
         return article

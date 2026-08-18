@@ -20,6 +20,7 @@ import logging
 import time
 
 from crawl.adapters.base import BaseAdapter
+from crawl.adapters.huanqiu.adapter import HuanqiuAdapter
 from crawl.adapters.huanqiu.utils import (
     DEFAULT_HEADERS,
     PAGE_SIZE,
@@ -64,6 +65,10 @@ class HuanqiuHistoryAdapter(BaseAdapter):
     platform_type = "news"
     name = "huanqiu_history"
     required_tags = ["huanqiu"]
+
+    def fetch_detail(self, source: Source, article: Article) -> Article:
+        """正文抓取委托给常规适配器（逻辑相同）。"""
+        return HuanqiuAdapter().fetch_detail(source, article)
 
     def fetch_list(self, source: Source, limit: int = 200, on_page=None, start_offset: int = 0) -> list[Article]:
         """翻页抓取。
