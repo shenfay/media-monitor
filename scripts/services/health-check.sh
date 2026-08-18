@@ -54,6 +54,36 @@ check_service "API" "http://localhost:8080/health"
 check_service "API Liveness" "http://localhost:8080/health/live"
 check_service "API Readiness" "http://localhost:8080/health/ready"
 
+# 抓取队列状态（通过 API 端点检查）
+echo ""
+echo "📦 抓取队列状态:"
+QUEUE_JSON=$(curl -s --connect-timeout 3 http://localhost:8080/api/v1/admin/crawl/queue-status \
+    -H "Authorization: Bearer $(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+        -H 'Content-Type: application/json' \
+        -d '{"email":"founder@media-monitor.com","password":"founder123"}' 2>/dev/null | jq -r '.data.access_token // empty')" 2>/dev/null)
+
+if [ -n "$QUEUE_JSON" ] && echo "$QUEUE_JSON" | jq -e '.data' > /dev/null 2>&1; then
+    DETAIL_LAG=$(echo "$QUEUE_JSON" | jq -r '.data.detail_queue.lag // 0')
+    INGEST_PENDING=$(echo "$QUEUE_JSON" | jq -r '.data.ingest_queue.pending // 0')
+    DISPATCH_LEN=$(echo "$QUEUE_JSON" | jq -r '.data.dispatch_queue.length // 0')
+    
+    if [ "$DETAIL_LAG" -gt 100 ] 2>/dev/null; then
+        print_warning "Detail Queue lag: $DETAIL_LAG (>100)"
+    else
+        print_success "Detail Queue lag: $DETAIL_LAG"
+    fi
+    
+    if [ "$INGEST_PENDING" -gt 200 ] 2>/dev/null; then
+        print_warning "Ingest Queue pending: $INGEST_PENDING (>200)"
+    else
+        print_success "Ingest Queue pending: $INGEST_PENDING"
+    fi
+    
+    print_success "Dispatch Queue length: $DISPATCH_LEN"
+else
+    print_warning "无法获取队列状态（API 未运行或认证失败）"
+fi
+
 # 监控服务（可选）
 check_service "Prometheus" "http://localhost:9090/-/healthy"
 check_service "Grafana" "http://localhost:3000/api/health"

@@ -168,6 +168,10 @@ stop_existing() {
     pkill -f "go run ./cmd/worker" 2>/dev/null || true
     pkill -f "Caches/go-build.*worker" 2>/dev/null || true
     
+    # 停止 Python Detail Worker
+    pkill -f "crawl detail-worker" 2>/dev/null || true
+    pkill -f "crawl.detail_worker" 2>/dev/null || true
+    
     # 停止其他辅助进程
     pkill -f "asynqmon" 2>/dev/null || true
     pkill -f "cmd/docs/main.go" 2>/dev/null || true
@@ -252,6 +256,41 @@ start_worker() {
     cd "$ORIGINAL_DIR"
 }
 
+# 启动 Python Detail Worker（详情抓取常驻消费进程）
+start_detail_worker() {
+    print_info "启动 Detail Worker 服务..."
+    
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
+    SCRAPER_DIR="$PROJECT_ROOT/scraper"
+    
+    ORIGINAL_DIR="$(pwd)"
+    
+    if [ ! -d "$SCRAPER_DIR/src/crawl" ]; then
+        print_warning "Scraper 目录不存在，跳过 Detail Worker: $SCRAPER_DIR"
+        cd "$ORIGINAL_DIR"
+        return
+    fi
+    
+    cd "$SCRAPER_DIR" || exit 1
+    
+    # 使用 PYTHONPATH 指向 src 目录，确保模块可导入
+    PYTHONPATH="$SCRAPER_DIR/src" nohup python3 -m crawl detail-worker --delay 0.5 > /tmp/detail-worker.log 2>&1 &
+    DETAIL_PID=$!
+    
+    sleep 1
+    
+    if ps -p $DETAIL_PID > /dev/null; then
+        print_success "Detail Worker 已启动 (PID: $DETAIL_PID)"
+        print_info "查看日志：tail -f /tmp/detail-worker.log"
+    else
+        print_warning "Detail Worker 启动失败（可稍后手动启动）"
+        tail -10 /tmp/detail-worker.log 2>/dev/null || true
+    fi
+    
+    cd "$ORIGINAL_DIR"
+}
+
 # 启动 Asynqmon
 start_asynqmon() {
     print_info "启动 Asynqmon 监控..."
@@ -306,12 +345,14 @@ start_swagger() {
 save_pids() {
     local api_pid=$(pgrep -f "go run ./cmd/api")
     local worker_pid=$(pgrep -f "go run ./cmd/worker")
+    local detail_pid=$(pgrep -f "crawl detail-worker" | head -1)
     local asynqmon_pid=$(pgrep -f "asynqmon")
     local swagger_pid=$(pgrep -f "cmd/docs/main.go")
     
     cat > /tmp/kiqi-pids.txt << EOF
 API_PID=$api_pid
 WORKER_PID=$worker_pid
+DETAIL_WORKER_PID=${detail_pid:-}
 ASYNQMON_PID=${asynqmon_pid:-}
 SWAGGER_PID=${swagger_pid:-}
 TIMESTAMP=$(date)
@@ -382,6 +423,7 @@ main() {
     # 启动服务
     start_api
     start_worker
+    start_detail_worker
     
     if [ "$START_MONITOR" = true ]; then
         start_asynqmon
@@ -432,6 +474,7 @@ main() {
     print_info "提示:"
     echo "  - 查看 API 日志：tail -f /tmp/api.log"
     echo "  - 查看 Worker 日志：tail -f /tmp/worker.log"
+    echo "  - 查看 Detail Worker 日志：tail -f /tmp/detail-worker.log"
     echo "  - 执行测试流程：./scripts/dev/core-flow-test.sh"
     echo "  - 停止所有服务：$0 --clean"
     echo ""
